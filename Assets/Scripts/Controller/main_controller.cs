@@ -7,6 +7,7 @@ public class main_controller : MonoBehaviour
     private LayerMask unit_layer;
     public List<unit_main> all_units = new List<unit_main>();
     public List<unit_main> selected_units = new List<unit_main>();
+    public team_ids my_team_id = team_ids.Ayham_team;
     void Start()
     {
         ground = LayerMask.GetMask("Ground");
@@ -38,7 +39,7 @@ public class main_controller : MonoBehaviour
             {
                 unit_main target_unit = hit.collider.GetComponent<unit_main>();
                 Debug.Log("hit team id: " + target_unit.team_id);
-                if (target_unit != null && target_unit.team_id != team_ids.Ayham_team)
+                if (target_unit != null && target_unit.team_id != my_team_id)
                 {
                     // Attack the target unit
                     foreach (unit_main unit in selected_units)
@@ -71,7 +72,7 @@ public class main_controller : MonoBehaviour
             if (hit.collider.CompareTag("Unit"))
             {
                 unit_main target_unit = hit.collider.GetComponent<unit_main>();
-                if (target_unit != null && target_unit.team_id == team_ids.Ayham_team)
+                if (target_unit != null && target_unit.team_id == my_team_id)
                 {
                     select_unit(target_unit);
                 }
