@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
 
 public enum team_ids
 {
@@ -12,7 +13,9 @@ public class unit_main : MonoBehaviour
     private LayerMask ground;
     unit_movement unit_movement;
     unit_attacks unit_attacks;
+    health_bar_controll health_bar_controller;
     public team_ids team_id = team_ids.Ayham_team;
+    public short unit_base_hp = 1000;
     public short unit_hp = 1000;
     public float unit_attack_speed = 1f;
     public short unit_damage = 100;
@@ -21,6 +24,9 @@ public class unit_main : MonoBehaviour
     private bool is_selected = false;
     public bool is_alive = true;
     public bool is_attacking = false;
+    private bool is_under_attack = false;
+    private float under_attack_timer = 0f;
+    private const float under_attack_display_cd = 3f;
 
 
     void Start()
@@ -38,10 +44,32 @@ public class unit_main : MonoBehaviour
             Debug.LogError("unit_attacks component not found on this GameObject.");
             return;
         }
+        health_bar_controller = GetComponentInChildren<health_bar_controll>();
+        if (health_bar_controller == null)
+        {
+            Debug.LogError("health_bar_controll component not found in children of this GameObject.");
+            return;
+        }
     }
-    public void take_damage(short dmg)
+    void Update()
+    {
+        if (is_under_attack)
+        {
+            under_attack_timer -= Time.deltaTime;
+            if (under_attack_timer <= 0f)
+            {
+                is_under_attack = false;
+                if (!is_selected)
+                    health_bar_controller.SetVisible(false);
+            }
+        }
+	}
+	public void take_damage(short dmg)
     {
         unit_hp -= dmg;
+        is_under_attack = true;
+        under_attack_timer = under_attack_display_cd;
+        health_bar_controller.SetVisible(true);
         if (unit_hp <= 0)
         {
             // Handle unit death
@@ -53,16 +81,7 @@ public class unit_main : MonoBehaviour
     public void set_select(bool status)
     {
         is_selected = status;
-        // if (is_selected)
-        // {
-        //     // Highlight the unit
-        //     GetComponent<Renderer>().material.color = Color.green;
-        // }
-        // else
-        // {
-        //     // Remove highlight
-        //     GetComponent<Renderer>().material.color = Color.white;
-        // }
+        health_bar_controller.SetVisible(status);
     }
     public void set_move_order(Vector3 dest)
     {
