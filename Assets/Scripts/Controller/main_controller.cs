@@ -6,7 +6,7 @@ public class main_controller : MonoBehaviour
     private LayerMask ground;
     private LayerMask unit_layer;
     public List<unit_main> all_units = new List<unit_main>();
-    private List<unit_main> selected_units = new List<unit_main>();
+    public List<unit_main> selected_units = new List<unit_main>();
     void Start()
     {
         ground = LayerMask.GetMask("Ground");
@@ -78,7 +78,7 @@ public class main_controller : MonoBehaviour
             }
         }
     }
-    private void select_unit(unit_main unit)
+    public void select_unit(unit_main unit)
     {
         if (selected_units.Contains(unit))
         {
@@ -89,7 +89,7 @@ public class main_controller : MonoBehaviour
         unit.set_select(true);
         Debug.Log("Selected unit: " + unit.name);
     }
-    private void de_select_all_units()
+    public void de_select_all_units()
     {
         foreach (unit_main unit in selected_units)
         {

@@ -35,6 +35,7 @@ public class unit_movement : MonoBehaviour
         float distance = Vector3.Distance(transform.position, target_unit.transform.position);
         if (distance > target_unit.unit_range)
         {
+            agent.isStopped = false;
             agent.SetDestination(target_unit.transform.position);
             return 1; // Approaching
         }
