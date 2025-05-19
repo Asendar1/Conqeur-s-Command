@@ -25,11 +25,30 @@ public class main_controller : MonoBehaviour
         {
             handle_left_click();
         }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            // Example of spawning a game object when R key is pressed
+            GameObject unitPrefab = Resources.Load<GameObject>("Prefabs/Units/unit_ayhem"); // Adjust path to your prefab
+            if (unitPrefab != null)
+            {
+                Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit_spawn, Mathf.Infinity, ground);
+                Vector3 spawn_position = hit_spawn.point;
+                spawn_position.y = 0;
+                for (int i = 0; i < 100; i++)
+                {
+                    GameObject newUnitObject = Instantiate(unitPrefab, spawn_position, Quaternion.identity);
+                    unit_main newUnit = newUnitObject.GetComponent<unit_main>();
+                }
+            }
+            else
+            {
+                Debug.LogError("Unit prefab not found! Make sure it exists in Resources/Prefabs folder.");
+            }
+        }
     }
 
     private void handle_right_click()
     {
-        Debug.Log("selected_units count: " + selected_units.Count);
         if (selected_units.Count == 0) return;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
@@ -38,7 +57,6 @@ public class main_controller : MonoBehaviour
             if (hit.collider.gameObject.CompareTag("Unit"))
             {
                 unit_main target_unit = hit.collider.GetComponent<unit_main>();
-                Debug.Log("hit team id: " + target_unit.team_id);
                 if (target_unit != null && target_unit.team_id != my_team_id)
                 {
                     // Attack the target unit
@@ -63,7 +81,7 @@ public class main_controller : MonoBehaviour
         bool is_multi_selecting = Input.GetKey(KeyCode.LeftAlt);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit))
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, unit_layer | ground))
         {
             if (!is_multi_selecting)
             {
@@ -83,7 +101,6 @@ public class main_controller : MonoBehaviour
     {
         if (selected_units.Contains(unit))
         {
-            Debug.Log("Unit already selected: " + unit.name);
             return;
         }
         selected_units.Add(unit);
@@ -95,7 +112,6 @@ public class main_controller : MonoBehaviour
         foreach (unit_main unit in selected_units)
         {
             unit.set_select(false);
-            Debug.Log("Deselected unit: " + unit.name);
         }
         selected_units.Clear();
     }

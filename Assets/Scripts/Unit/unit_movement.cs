@@ -12,6 +12,8 @@ public class unit_movement : MonoBehaviour
             Debug.LogError("NavMeshAgent component not found on this GameObject.");
             return;
         }
+        agent.radius *= 0.8f;
+        agent.avoidancePriority = Random.Range(1, 100);
     }
     public void MoveTo(Vector3 destination)
     {
