@@ -70,6 +70,7 @@ public class unit_main : MonoBehaviour
         is_under_attack = true;
         under_attack_timer = under_attack_display_cd;
         health_bar_controller.SetVisible(true);
+        health_bar_controller.update_health_bar();
         if (unit_hp <= 0)
         {
             // Handle unit death

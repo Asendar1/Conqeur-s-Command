@@ -69,10 +69,14 @@ public class main_controller : MonoBehaviour
                     return;
                 }
             }
+            Vector3 center_point = hit.point;
+            float radius = Mathf.Sqrt(selected_units.Count) * 1.2f;
             foreach (unit_main unit in selected_units)
             {
                 unit.is_attacking = false;
-                unit.set_move_order(hit.point);
+                Vector2 random_point = Random.insideUnitCircle * radius;
+                Vector3 dest = center_point + new Vector3(random_point.x, 0, random_point.y);
+                unit.set_move_order(dest);
             }
         }
     }
@@ -105,7 +109,6 @@ public class main_controller : MonoBehaviour
         }
         selected_units.Add(unit);
         unit.set_select(true);
-        Debug.Log("Selected unit: " + unit.name);
     }
     public void de_select_all_units()
     {
