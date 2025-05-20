@@ -1,20 +1,12 @@
 using UnityEngine;
 
-public class HQ : MonoBehaviour
+public class HQ : building_main
 {
-
-    private short max_hp = 10000;
-    private short current_hp = 10000;
-    private short cost = 1000;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected override void init_building()
     {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        max_hp = 10000;
+        current_hp = 10000;
+        cost = 200;
+        building_id = building_ids.HQ;
     }
 }

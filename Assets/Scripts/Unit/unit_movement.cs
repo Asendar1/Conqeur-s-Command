@@ -4,8 +4,10 @@ using UnityEngine.AI;
 public class unit_movement : MonoBehaviour
 {
     private NavMeshAgent agent;
+    private unit_main unit_main;
     void Start()
     {
+        unit_main = GetComponent<unit_main>();
         agent = GetComponent<NavMeshAgent>();
         if (!agent)
         {
@@ -32,13 +34,13 @@ public class unit_movement : MonoBehaviour
     {
         agent.isStopped = true;
     }
-    public int approach_unit_within_range(unit_main target_unit)
+    public int approach_unit_within_range(Vector3 target_position)
     {
-        float distance = Vector3.Distance(transform.position, target_unit.transform.position);
-        if (distance > target_unit.unit_range)
+        float distance = Vector3.Distance(transform.position, target_position);
+        if (distance > unit_main.unit_range)
         {
             agent.isStopped = false;
-            agent.SetDestination(target_unit.transform.position);
+            agent.SetDestination(target_position);
             return 1; // Approaching
         }
         else

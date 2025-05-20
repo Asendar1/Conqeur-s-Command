@@ -63,8 +63,8 @@ public class unit_main : MonoBehaviour
                     health_bar_controller.SetVisible(false);
             }
         }
-	}
-	public void take_damage(short dmg)
+    }
+    public void take_damage(short dmg)
     {
         unit_hp -= dmg;
         is_under_attack = true;
@@ -91,5 +91,9 @@ public class unit_main : MonoBehaviour
     public void set_attack_order(unit_main target_unit)
     {
         unit_attacks.attack_target(target_unit);
+    }
+    public void set_attack_order(building_main target_building)
+    {
+        unit_attacks.attack_target(target_building);
     }
 }

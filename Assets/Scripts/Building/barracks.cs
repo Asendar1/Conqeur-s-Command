@@ -1,16 +1,14 @@
 using UnityEngine;
 
-public class barracks : MonoBehaviour
+public class barracks : building_main
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected override void init_building()
     {
-        
+        max_hp = 6500;
+        current_hp = 6500;
+        cost = 150;
+        building_id = building_ids.Barracks;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

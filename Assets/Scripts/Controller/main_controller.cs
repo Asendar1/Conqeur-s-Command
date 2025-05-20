@@ -5,13 +5,16 @@ public class main_controller : MonoBehaviour
 {
     private LayerMask ground;
     private LayerMask unit_layer;
+    private building_main building_main;
     public List<unit_main> all_units = new List<unit_main>();
     public List<unit_main> selected_units = new List<unit_main>();
     public team_ids my_team_id = team_ids.Ayham_team;
+    private building_controller building_controller;
     void Start()
     {
         ground = LayerMask.GetMask("Ground");
         unit_layer = LayerMask.GetMask("Clickable");
+        building_controller = GetComponent<building_controller>();
     }
 
     // Update is called once per frame
@@ -45,6 +48,14 @@ public class main_controller : MonoBehaviour
                 Debug.LogError("Unit prefab not found! Make sure it exists in Resources/Prefabs folder.");
             }
         }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            building_controller.spawn_building(building_ids.HQ);
+        }
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            building_controller.spawn_building(building_ids.Barracks);
+        }
     }
 
     private void handle_right_click()
@@ -65,7 +76,19 @@ public class main_controller : MonoBehaviour
                         unit.is_attacking = true;
                         unit.set_attack_order(target_unit);
                     }
-                    Debug.Log("Attacking target unit: " + target_unit.name);
+                    return;
+                }
+            }
+            if (hit.collider.gameObject.CompareTag("Building"))
+            {
+                building_main target_building = hit.collider.GetComponent<building_main>();
+                if (target_building != null && target_building.team_id != my_team_id)
+                {
+                    foreach (unit_main unit in selected_units)
+                    {
+                        unit.is_attacking = true;
+                        unit.set_attack_order(target_building);
+                    }
                     return;
                 }
             }
@@ -99,6 +122,14 @@ public class main_controller : MonoBehaviour
                     select_unit(target_unit);
                 }
             }
+            if (hit.collider.CompareTag("Building"))
+            {
+                building_main = hit.collider.GetComponent<building_main>();
+                if (building_main != null && building_main.team_id == my_team_id)
+                {
+                    building_main.set_selected(true);
+                }
+            }
         }
     }
     public void select_unit(unit_main unit)
@@ -115,6 +146,10 @@ public class main_controller : MonoBehaviour
         foreach (unit_main unit in selected_units)
         {
             unit.set_select(false);
+        }
+        if (building_main != null)
+        {
+            building_main.set_selected(false);
         }
         selected_units.Clear();
     }

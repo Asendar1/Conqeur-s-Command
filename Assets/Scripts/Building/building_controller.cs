@@ -60,11 +60,16 @@ public class building_controller : MonoBehaviour
                 pos.y = 0;
                 building_preview.transform.position = pos;
                 bool is_valid_position = check_placment_validity(pos);
-                if (Input.GetMouseButtonDown(0) && is_valid_position)
+                Renderer[] renderers = building_preview.GetComponentsInChildren<Renderer>();
+                foreach (Renderer renderer in renderers)
                 {
-                    place_building(pos);
-                    cancel_building();
+                    renderer.material.color = is_valid_position ? Color.green : Color.red;
                 }
+                if (Input.GetMouseButtonDown(0) && is_valid_position)
+                    {
+                        place_building(pos);
+                        cancel_building();
+                    }
             }
             if (Input.GetMouseButtonDown(1))
             {
@@ -73,32 +78,62 @@ public class building_controller : MonoBehaviour
         }
 	}
 
-	private void place_building(Vector3 pos)
-	{
-		throw new NotImplementedException();
+    private void place_building(Vector3 pos)
+    {
+        GameObject new_building = Instantiate(building_prefab, pos, quaternion.identity);
+        building_main this_building = new_building.GetComponent<building_main>();
+        if (this_building != null)
+        {
+            this_building.team_id = main_controller.my_team_id;
+        }
 	}
 
-	private bool check_placment_validity(Vector3 pos)
-	{
-		throw new NotImplementedException();
+    private bool check_placment_validity(Vector3 pos)
+    {
+        Collider preview_collider = building_preview.GetComponent<Collider>();
+        Bounds bounds = preview_collider.bounds;
+        Collider[] colliders = Physics.OverlapBox(bounds.center, bounds.extents * 0.9f, Quaternion.identity);
+        foreach (Collider collider in colliders)
+        {
+            if (collider.gameObject == building_preview || collider.gameObject.layer == LayerMask.NameToLayer("Ground"))
+            {
+                continue;
+            }
+            return false;
+        }
+        return true;
 	}
 
 	private GameObject get_preview_prefab(building_ids showcase_building_id)
 	{
-		throw new NotImplementedException();
+		switch (showcase_building_id)
+        {
+            case building_ids.HQ:
+                return Resources.Load<GameObject>("Prefabs/Buildings/HQ/HQ_preview");
+            case building_ids.Barracks:
+                return Resources.Load<GameObject>("Prefabs/Buildings/Barracks/Barracks_preview");
+            default:
+                Debug.LogError("Invalid building ID.");
+                return null;
+        }
 	}
 
 	public void spawn_building(building_ids building_id)
     {
+        if (building_preview != null)
+        {
+            Destroy(building_preview);
+            building_preview = null;
+        }
         switch (building_id)
         {
             case building_ids.HQ:
                 showcase_building_id = building_ids.HQ;
-                building_prefab = Resources.Load<GameObject>(null);
+                building_prefab = Resources.Load<GameObject>("Prefabs/Buildings/HQ/HQ");
                 break;
             case building_ids.Barracks:
                 showcase_building_id = building_ids.Barracks;
-                building_prefab = Resources.Load<GameObject>(null);
+                building_prefab = Resources.Load<GameObject>("Prefabs/Buildings/Barracks/Barracks");
                 break;
         }
         // ! the cost calculation is done before,
@@ -107,5 +142,10 @@ public class building_controller : MonoBehaviour
     public void cancel_building()
     {
         showcase_building_id = building_ids.None;
+        if (building_preview != null)
+        {
+            Destroy(building_preview);
+            building_preview = null;
+        }
     }
 }
