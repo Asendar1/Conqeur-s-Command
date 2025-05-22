@@ -7,7 +7,8 @@ public enum building_ids
 {
     None,
     HQ,
-    Barracks
+    Barracks,
+    SupplyBase,
 }
 public class building_controller : MonoBehaviour
 {
@@ -112,6 +113,8 @@ public class building_controller : MonoBehaviour
                 return Resources.Load<GameObject>("Prefabs/Buildings/HQ/HQ_preview");
             case building_ids.Barracks:
                 return Resources.Load<GameObject>("Prefabs/Buildings/Barracks/Barracks_preview");
+            case building_ids.SupplyBase:
+                return Resources.Load<GameObject>("Prefabs/Buildings/Supply_base/supply_base_preview");
             default:
                 Debug.LogError("Invalid building ID.");
                 return null;
@@ -134,6 +137,10 @@ public class building_controller : MonoBehaviour
             case building_ids.Barracks:
                 showcase_building_id = building_ids.Barracks;
                 building_prefab = Resources.Load<GameObject>("Prefabs/Buildings/Barracks/Barracks");
+                break;
+            case building_ids.SupplyBase:
+                showcase_building_id = building_ids.SupplyBase;
+                building_prefab = Resources.Load<GameObject>("Prefabs/Buildings/Supply_base/supply_base");
                 break;
         }
         // ! the cost calculation is done before,

@@ -56,6 +56,10 @@ public class main_controller : MonoBehaviour
         {
             building_controller.spawn_building(building_ids.Barracks);
         }
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            building_controller.spawn_building(building_ids.SupplyBase);
+        }
     }
 
     private void handle_right_click()

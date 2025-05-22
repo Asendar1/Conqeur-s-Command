@@ -3,11 +3,10 @@ using System;
 
 public static class game_events
 {
-	// ? Unit Events
-	public static event Action<unit_main> on_unit_selected;
-	public static event Action<unit_main> on_unit_deselected;
-	public static event Action<unit_main, short> on_unit_damaged;
-	public static event Action<unit_main> on_unit_destroyed;
+	public static event Action<Vector3, int> On_added_money;
 
-
+	public static void added_money(Vector3 pos, int amount)
+	{
+		On_added_money?.Invoke(pos, amount);
+	}
 }
