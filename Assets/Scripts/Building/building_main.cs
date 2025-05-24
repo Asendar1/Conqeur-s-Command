@@ -4,10 +4,10 @@ using UnityEngine;
 public class building_main : MonoBehaviour
 {
     public team_ids team_id;
-    public short max_hp;
-    public short current_hp;
-    public short cost;
-    // public short build_time;
+    public int max_hp;
+    public int current_hp;
+    public int cost;
+    // public int build_time;
     public building_ids building_id;
     public bool is_selected = false;
     public bool is_alive = true;
@@ -44,7 +44,7 @@ public class building_main : MonoBehaviour
         }
     }
 
-    public virtual void take_damage(short damage)
+    public virtual void take_damage(int damage)
     {
         is_under_attack = true;
         current_hp -= damage;

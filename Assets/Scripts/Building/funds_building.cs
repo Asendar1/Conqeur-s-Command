@@ -18,17 +18,21 @@ public class funds_building : MonoBehaviour
     //     if (test)
     //         update_fund_indicators();
     // }
-    public bool get_money(int amount)
+    public int get_money(int amount)
     {
         update_fund_indicators();
-        if (money >= amount && money > 0)
+        if (money >= amount)
         {
             money -= amount;
-            return true;
+            update_fund_indicators();
+            return amount;
         }
         else
         {
-            return false;
+            int available = money;
+            money = 0;
+            update_fund_indicators();
+            return available;
         }
     }
     private void update_fund_indicators()
