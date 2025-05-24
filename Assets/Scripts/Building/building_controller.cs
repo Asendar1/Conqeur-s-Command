@@ -2,6 +2,7 @@ using System;
 using Unity.Mathematics;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using System.Collections.Generic;
 
 public enum building_ids
 {
@@ -17,6 +18,13 @@ public class building_controller : MonoBehaviour
     private LayerMask ground;
     private GameObject building_prefab = null;
     private GameObject building_preview = null;
+
+    private Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
+    {
+        {building_ids.HQ, 200},
+        {building_ids.Barracks, 150},
+        {building_ids.SupplyBase, 125}
+    };
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -67,10 +75,10 @@ public class building_controller : MonoBehaviour
                     renderer.material.color = is_valid_position ? Color.green : Color.red;
                 }
                 if (Input.GetMouseButtonDown(0) && is_valid_position)
-                    {
-                        place_building(pos);
-                        cancel_building();
-                    }
+                {
+                    place_building(pos);
+                    cancel_building();
+                }
             }
             if (Input.GetMouseButtonDown(1))
             {
@@ -81,6 +89,12 @@ public class building_controller : MonoBehaviour
 
     private void place_building(Vector3 pos)
     {
+        int cost = buildings_cost[showcase_building_id];
+        if (!main_controller.spend_money(cost))
+        {
+            Debug.Log("You are poor my guy");
+            return;
+        }
         GameObject new_building = Instantiate(building_prefab, pos, quaternion.identity);
         building_main this_building = new_building.GetComponent<building_main>();
         if (this_building != null)

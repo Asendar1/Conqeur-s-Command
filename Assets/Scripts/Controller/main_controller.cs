@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
+using System.Data.SqlTypes;
+using UnityEngine.UI;
 
 public class main_controller : MonoBehaviour
 {
@@ -10,6 +13,12 @@ public class main_controller : MonoBehaviour
     public List<unit_main> selected_units = new List<unit_main>();
     public team_ids my_team_id = team_ids.Ayham_team;
     private building_controller building_controller;
+    [SerializeField] private TextMeshProUGUI money_text;
+
+
+    [SerializeField] private int money = 1500;
+    [SerializeField] private int power = 0;
+
     void Start()
     {
         ground = LayerMask.GetMask("Ground");
@@ -156,5 +165,35 @@ public class main_controller : MonoBehaviour
             building_main.set_selected(false);
         }
         selected_units.Clear();
+    }
+    public int get_money()
+    {
+        return money;
+    }
+    public bool spend_money(int amount)
+    {
+        if (money >= amount)
+        {
+            money -= amount;
+            update_ui();
+            return true;
+        }
+        return false;
+    }
+    public void add_money(int amount)
+    {
+        money += amount;
+        update_ui();
+    }
+    public void set_money(int amount)
+    {
+        money = amount;
+    }
+    private void update_ui()
+    {
+        if (money_text != null)
+        {
+            money_text.text = "Money: " + money.ToString();
+        }
     }
 }
