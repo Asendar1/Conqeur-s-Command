@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using TMPro;
 using System.Data.SqlTypes;
 using UnityEngine.UI;
+using Unity.Collections;
 
 public class main_controller : MonoBehaviour
 {
     private LayerMask ground;
-    private LayerMask unit_layer;
+    private LayerMask clickable;
     private building_main building_main;
     public List<unit_main> all_units = new List<unit_main>();
     public List<unit_main> selected_units = new List<unit_main>();
-    public team_ids my_team_id = team_ids.Ayham_team;
+    public team_ids my_team_id;
     private building_controller building_controller;
     [SerializeField] private TextMeshProUGUI money_text;
 
@@ -19,11 +20,25 @@ public class main_controller : MonoBehaviour
     [SerializeField] private int money = 1500;
     [SerializeField] private int power = 0;
 
+    private unit_main target_unit;
+    private building_main target_building;
+
     void Start()
     {
+        my_team_id = team_ids.Ayham_team;
         ground = LayerMask.GetMask("Ground");
-        unit_layer = LayerMask.GetMask("Clickable");
+        clickable = LayerMask.GetMask("Clickable");
         building_controller = GetComponent<building_controller>();
+    }
+
+    void OnEnable()
+    {
+        game_events.On_money_deposited += add_money;
+    }
+
+    void OnDisable()
+    {
+        game_events.On_money_deposited -= add_money;
     }
 
     // Update is called once per frame
@@ -48,8 +63,8 @@ public class main_controller : MonoBehaviour
                 spawn_position.y = 0;
                 for (int i = 0; i < 100; i++)
                 {
-                    GameObject newUnitObject = Instantiate(unitPrefab, spawn_position, Quaternion.identity);
-                    unit_main newUnit = newUnitObject.GetComponent<unit_main>();
+                    Vector3 random_spawn = new Vector3(spawn_position.x + Random.Range(-5f, 5f), spawn_position.y, spawn_position.z + Random.Range(-5f, 5f));
+                    GameObject newUnitObject = Instantiate(unitPrefab, random_spawn, Quaternion.identity);
                 }
             }
             else
@@ -75,44 +90,27 @@ public class main_controller : MonoBehaviour
     {
         if (selected_units.Count == 0) return;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, ground | unit_layer))
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | clickable))
         {
-            if (hit.collider.gameObject.CompareTag("Unit"))
+            target_unit = null;
+            target_building = null;
+            if (hit.collider.CompareTag("Unit"))
             {
-                unit_main target_unit = hit.collider.GetComponent<unit_main>();
-                if (target_unit != null && target_unit.team_id != my_team_id)
-                {
-                    // Attack the target unit
-                    foreach (unit_main unit in selected_units)
-                    {
-                        unit.is_attacking = true;
-                        unit.set_attack_order(target_unit);
-                    }
-                    return;
-                }
+                target_unit = hit.collider.GetComponent<unit_main>();
             }
-            if (hit.collider.gameObject.CompareTag("Building"))
+            else if (hit.collider.CompareTag("Building"))
             {
-                building_main target_building = hit.collider.GetComponent<building_main>();
-                if (target_building != null && target_building.team_id != my_team_id)
-                {
-                    foreach (unit_main unit in selected_units)
-                    {
-                        unit.is_attacking = true;
-                        unit.set_attack_order(target_building);
-                    }
-                    return;
-                }
+                target_building = hit.collider.GetComponent<building_main>();
             }
-            Vector3 center_point = hit.point;
+            if (selected_units.Count == 1)
+            {
+                selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
+                return;
+            }
             float radius = Mathf.Sqrt(selected_units.Count) * 1.2f;
             foreach (unit_main unit in selected_units)
             {
-                unit.is_attacking = false;
-                Vector2 random_point = Random.insideUnitCircle * radius;
-                Vector3 dest = center_point + new Vector3(random_point.x, 0, random_point.y);
-                unit.set_move_order(dest);
+                unit.unit_right_click(hit.point, target_unit, target_building, radius);
             }
         }
     }
@@ -121,7 +119,7 @@ public class main_controller : MonoBehaviour
         bool is_multi_selecting = Input.GetKey(KeyCode.LeftAlt);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, unit_layer | ground))
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, clickable | ground))
         {
             if (!is_multi_selecting)
             {
@@ -135,8 +133,11 @@ public class main_controller : MonoBehaviour
                     select_unit(target_unit);
                 }
             }
+            // TODO i should add a way to check building or unit health without the need to select it.
+            // TODO maybe by hovering over it
             if (hit.collider.CompareTag("Building"))
             {
+                de_select_all_units();
                 building_main = hit.collider.GetComponent<building_main>();
                 if (building_main != null && building_main.team_id == my_team_id)
                 {
@@ -180,14 +181,16 @@ public class main_controller : MonoBehaviour
         }
         return false;
     }
-    public void add_money(int amount)
+    public void add_money(int amount, team_ids team_id)
     {
+        if (team_id != my_team_id) return;
         money += amount;
         update_ui();
     }
     public void set_money(int amount)
     {
         money = amount;
+        update_ui();
     }
     private void update_ui()
     {

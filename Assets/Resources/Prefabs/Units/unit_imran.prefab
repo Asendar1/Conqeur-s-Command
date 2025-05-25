@@ -127,7 +127,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13981c36a29e2454bbe7eb196a924d69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  team_id: 1
+  unit_id: 1
+  team_id: 2
   unit_base_hp: 1000
   unit_hp: 1000
   unit_attack_speed: 1
@@ -136,6 +137,7 @@ MonoBehaviour:
   unit_range: 5
   is_alive: 1
   is_attacking: 0
+  can_attack: 1
 --- !u!114 &4111450334062490781
 MonoBehaviour:
   m_ObjectHideFlags: 0

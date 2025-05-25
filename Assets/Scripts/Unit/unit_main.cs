@@ -4,8 +4,16 @@ using UnityEngine.Rendering;
 
 public enum team_ids
 {
+    None,
     Ayham_team,
-    Imran_team
+    Imran_team,
+};
+
+public enum unit_ids
+{
+    supply_unit,
+    infantry_unit,
+    worker_unit
 };
 
 public class unit_main : MonoBehaviour
@@ -14,6 +22,8 @@ public class unit_main : MonoBehaviour
     unit_movement unit_movement;
     unit_attacks unit_attacks;
     health_bar_controll health_bar_controller;
+
+    public unit_ids unit_id = unit_ids.infantry_unit;
     public team_ids team_id = team_ids.Ayham_team;
     public int unit_base_hp = 1000;
     public int unit_hp = 1000;
@@ -104,6 +114,36 @@ public class unit_main : MonoBehaviour
     public void stop_unit()
     {
         unit_movement.stop_unit();
+    }
+    public virtual void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
+    {
+        if (can_attack)
+        {
+            if (target_unit != null && target_unit.team_id != team_id)
+            {
+                is_attacking = true;
+                set_attack_order(target_unit);
+                return;
+            }
+            if (target_building != null && target_building.team_id != team_id)
+            {
+                is_attacking = true;
+                set_attack_order(target_building);
+                return;
+            }
+        }
+        is_attacking = false;
+        // If no attack target, just move to the position
+        if (radius > 0)
+        {
+            Vector2 random_pos = Random.insideUnitCircle * radius;
+            Vector3 new_pos = new Vector3(pos.x + random_pos.x, pos.y, pos.z + random_pos.y);
+            set_move_order(new_pos);
+        }
+        else
+        {
+            set_move_order(pos);
+        }
     }
     protected virtual void init_unit()
     {

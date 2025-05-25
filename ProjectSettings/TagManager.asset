@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Unit
   - Building
+  - UnAttackable
   layers:
   - Default
   - TransparentFX

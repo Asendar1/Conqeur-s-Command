@@ -15,9 +15,9 @@ GameObject:
   - component: {fileID: 6988390258575823611}
   - component: {fileID: 4906601452952685881}
   - component: {fileID: -8540338286410955140}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: supply_unit
-  m_TagString: Untagged
+  m_TagString: Unit
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -148,7 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da00aa5f13c25e644b8e67ad58bd65f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  team_id: 0
+  unit_id: 1
+  team_id: 1
   unit_base_hp: 1000
   unit_hp: 1000
   unit_attack_speed: 1

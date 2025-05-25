@@ -2,13 +2,14 @@ using System.Runtime.CompilerServices;
 using UnityEditor.Rendering;
 using UnityEngine;
 
-public class funds_building : MonoBehaviour
+public class funds_building : building_main
 {
     [SerializeField] private GameObject group_1;
     [SerializeField] private GameObject group_2;
     [SerializeField] private GameObject group_3;
     [SerializeField] private GameObject group_4;
     [SerializeField] private int money = 6000;
+
     // ! for testing visuals of the groups ONLY
     // [SerializeField] bool test = false;
     private int max_money = 6000;
@@ -18,6 +19,19 @@ public class funds_building : MonoBehaviour
     //     if (test)
     //         update_fund_indicators();
     // }
+
+    protected override void init_building()
+    {
+        team_id = team_ids.None;
+        selectable = false;
+        attackable = false;
+        max_hp = 999999999;
+        current_hp = 999999999;
+        cost = 999999999;
+        building_id = building_ids.MoneyYard;
+        money = max_money;
+        update_fund_indicators();
+    }
     public int get_money(int amount)
     {
         update_fund_indicators();

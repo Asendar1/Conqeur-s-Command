@@ -14,8 +14,8 @@ public class unit_supply : unit_main
 	[SerializeField] private supply_base supply_base;
 
 
-	private enum gather_states { Idle, Moving_to_yard, Gathering, Returning_to_base };
-	private gather_states current_state = gather_states.Idle;
+	private enum gather_states { Idle, Moving_to_yard, Gathering, Returning_to_base, Depositing };
+	[SerializeField] private gather_states current_state = gather_states.Idle;
 
 	private WaitForSeconds gathering_wait;
 	private WaitForSeconds deposit_wait;
@@ -30,6 +30,7 @@ public class unit_supply : unit_main
 	}
 	protected override void init_unit()
 	{
+		unit_id = unit_ids.supply_unit;
 		unit_base_hp = 600;
 		unit_hp = 600;
 		can_attack = false;
@@ -59,7 +60,7 @@ public class unit_supply : unit_main
 	private void start_deposit()
 	{
 		stop_unit();
-		current_state = gather_states.Idle;
+		current_state = gather_states.Depositing;
 		current_deposit = StartCoroutine(deposit_resources());
 		// TODO add visual feedback
 	}
@@ -75,7 +76,7 @@ public class unit_supply : unit_main
 		if (assigned_yard != null && !assigned_yard.is_empty())
 		{
 			current_state = gather_states.Moving_to_yard;
-			set_move_order(assigned_yard.transform.position);
+			base.set_move_order(assigned_yard.transform.position);
 		}
 		else
 		{
@@ -86,7 +87,7 @@ public class unit_supply : unit_main
 	public void set_assigned_yard(funds_building yard)
 	{
 		assigned_yard = yard;
-		set_move_order(yard.transform.position);
+		base.set_move_order(yard.transform.position);
 		current_state = gather_states.Moving_to_yard;
 	}
 	private void start_gathering()
@@ -110,7 +111,7 @@ public class unit_supply : unit_main
 		if (carrying_amount > 0 && supply_base != null)
 		{
 			current_state = gather_states.Returning_to_base;
-			set_move_order(supply_base.transform.position);
+			base.set_move_order(supply_base.transform.position);
 		}
 		else
 		{
@@ -134,6 +135,26 @@ public class unit_supply : unit_main
 	}
 	public void set_supply_base(supply_base base_building)
 	{
+		set_move_order(base_building.transform.position);
+		current_state = gather_states.Returning_to_base;
 		supply_base = base_building;
+	}
+	public override void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
+	{
+		funds_building yard = target_building as funds_building;
+		if (yard != null)
+		{
+			set_assigned_yard(yard);
+			return;
+		}
+		// TODO assign supply base when back
+		supply_base supply_base = target_building as supply_base;
+		if (supply_base != null)
+		{
+			set_supply_base(supply_base);
+			current_state = gather_states.Returning_to_base;
+			return;
+		}
+		base.unit_right_click(pos, target_unit, target_building, radius);
 	}
 }

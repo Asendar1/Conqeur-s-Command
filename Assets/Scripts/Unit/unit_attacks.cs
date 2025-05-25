@@ -57,6 +57,7 @@ public class unit_attacks : MonoBehaviour
             if (!current_target.is_alive)
             {
                 unit.is_attacking = false;
+                unit.stop_unit();
                 current_target = null;
                 return;
             }

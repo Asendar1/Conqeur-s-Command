@@ -14,6 +14,8 @@ public class building_main : MonoBehaviour
     private health_bar_controll health_bar_controller;
     private bool is_under_attack = false;
     private float under_attack_timer = 3f;
+    public bool attackable = true;
+    public bool selectable = true;
 
 
     void Start()
