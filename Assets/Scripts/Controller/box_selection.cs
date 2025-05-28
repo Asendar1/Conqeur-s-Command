@@ -115,5 +115,9 @@ public class box_selection : MonoBehaviour
                 }
             }
         }
+        if (main_controller.selected_units.Count > 0)
+        {
+            ui_events.unit_selected(main_controller.selected_units[0]);
+        }
     }
 }

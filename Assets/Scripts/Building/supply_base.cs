@@ -16,6 +16,6 @@ public class supply_base : building_main
     public void add_money(int amount)
     {
         game_events.money_deposited(amount, team_id);
-        // game_events.added_money(transform.position, amount);
+        game_events.added_money(transform.position, amount);
     }
 }

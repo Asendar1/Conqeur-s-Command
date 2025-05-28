@@ -4,11 +4,14 @@ using TMPro;
 using System.Data.SqlTypes;
 using UnityEngine.UI;
 using Unity.Collections;
+using UnityEngine.InputSystem;
 
 public class main_controller : MonoBehaviour
 {
     private LayerMask ground;
     private LayerMask clickable;
+    private LayerMask UI;
+
     private building_main building_main;
     public List<unit_main> all_units = new List<unit_main>();
     public List<unit_main> selected_units = new List<unit_main>();
@@ -28,6 +31,7 @@ public class main_controller : MonoBehaviour
         my_team_id = team_ids.Ayham_team;
         ground = LayerMask.GetMask("Ground");
         clickable = LayerMask.GetMask("Clickable");
+        UI = LayerMask.GetMask("UI");
         building_controller = GetComponent<building_controller>();
     }
 
@@ -84,6 +88,13 @@ public class main_controller : MonoBehaviour
         {
             building_controller.spawn_building(building_ids.SupplyBase);
         }
+        // to test money addition
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            Vector3 spawn_text = Camera.main.ScreenToWorldPoint(new Vector3(Mouse.current.position.ReadValue().x, Mouse.current.position.ReadValue().y, 10f));
+            spawn_text.y = 0;
+            game_events.added_money(spawn_text, -100);
+        }
     }
 
     private void handle_right_click()
@@ -92,6 +103,7 @@ public class main_controller : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | clickable))
         {
+
             target_unit = null;
             target_building = null;
             if (hit.collider.CompareTag("Unit"))
@@ -121,6 +133,11 @@ public class main_controller : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, clickable | ground))
         {
+            if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                // If the pointer is over a UI element, do nothing
+                return;
+            }
             if (!is_multi_selecting)
             {
                 de_select_all_units();
@@ -130,6 +147,7 @@ public class main_controller : MonoBehaviour
                 unit_main target_unit = hit.collider.GetComponent<unit_main>();
                 if (target_unit != null && target_unit.team_id == my_team_id)
                 {
+                    ui_events.unit_selected(target_unit);
                     select_unit(target_unit);
                 }
             }
@@ -141,6 +159,7 @@ public class main_controller : MonoBehaviour
                 building_main = hit.collider.GetComponent<building_main>();
                 if (building_main != null && building_main.team_id == my_team_id)
                 {
+                    ui_events.building_selected(building_main);
                     building_main.set_selected(true);
                 }
             }
@@ -157,6 +176,7 @@ public class main_controller : MonoBehaviour
     }
     public void de_select_all_units()
     {
+        ui_events.deselect();
         foreach (unit_main unit in selected_units)
         {
             unit.set_select(false);

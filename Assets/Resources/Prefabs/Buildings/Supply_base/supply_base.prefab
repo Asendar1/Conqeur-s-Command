@@ -266,13 +266,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4301c907bc168cd42ad2e82a501ad613, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  team_id: 0
+  team_id: 1
   max_hp: 0
   current_hp: 0
   cost: 0
   building_id: 0
   is_selected: 0
   is_alive: 1
+  attackable: 1
+  selectable: 1
 --- !u!65 &1926144039868914580
 BoxCollider:
   m_ObjectHideFlags: 0

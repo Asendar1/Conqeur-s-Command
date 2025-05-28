@@ -4,71 +4,32 @@ using TMPro;
 
 public class floating_text : MonoBehaviour
 {
-    [SerializeField] private TextMeshPro textComponent;
-    [SerializeField] private float floatSpeed = 1.5f;
-    [SerializeField] private float duration = 1.5f;
-    [SerializeField] private AnimationCurve scaleCurve;
-    [SerializeField] private AnimationCurve alphaCurve;
-    [SerializeField] private Color positiveColor = Color.green;
-    [SerializeField] private Color negativeColor = Color.red;
+	[SerializeField] private TextMeshPro text;
 
-    private void Awake()
-    {
-        if (textComponent == null)
-            textComponent = GetComponent<TextMeshPro>();
-    }
+	[SerializeField] private float duration = 2f;
+	[SerializeField] private float float_speed = 1f;
 
-    public void Initialize(int amount, bool randomizePosition = true)
-    {
-        // Format text with plus/minus sign
-        textComponent.text = amount > 0 ? "+" + amount : amount.ToString();
+	[SerializeField] private Color positive_color = Color.green;
+	[SerializeField] private Color negative_color = Color.red;
 
-        // Set text color based on amount
-        textComponent.color = amount >= 0 ? positiveColor : negativeColor;
+	public void init(int amount)
+	{
+		text.text = amount > 0 ? "+ " + amount : amount.ToString();
+		text.color = amount > 0 ? positive_color : negative_color;
 
-        // Slightly randomize position if requested
-        if (randomizePosition)
-        {
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-0.5f, 0.5f),
-                Random.Range(0.2f, 0.5f),
-                Random.Range(-0.5f, 0.5f)
-            );
-            transform.position += randomOffset;
-        }
+		StartCoroutine(floating_text_routine());
+	}
 
-        // Start animation
-        StartCoroutine(AnimateText());
-    }
-
-    private IEnumerator AnimateText()
-    {
-        float elapsed = 0;
-        Vector3 startPosition = transform.position;
-        Vector3 targetPosition = startPosition + Vector3.up * 2f; // Float upward
-        Vector3 startScale = transform.localScale;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float normalizedTime = elapsed / duration;
-
-            // Move upward
-            transform.position = Vector3.Lerp(startPosition, targetPosition, normalizedTime);
-
-            // Scale according to curve
-            float scale = scaleCurve.Evaluate(normalizedTime);
-            transform.localScale = startScale * scale;
-
-            // Fade according to curve
-            Color color = textComponent.color;
-            color.a = alphaCurve.Evaluate(normalizedTime);
-            textComponent.color = color;
-
-            yield return null;
-        }
-
-        // Destroy when animation completes
-        Destroy(gameObject);
-    }
+	private IEnumerator floating_text_routine()
+	{
+		float elapsed_time = 0f;
+		Vector3 start_pos = transform.position;
+		while (elapsed_time < duration)
+		{
+			elapsed_time += Time.deltaTime;
+			transform.position = start_pos + Vector3.up * (elapsed_time * float_speed);
+			yield return null;
+		}
+		Destroy(gameObject);
+	}
 }

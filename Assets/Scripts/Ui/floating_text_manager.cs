@@ -1,49 +1,34 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class floating_text_manager : MonoBehaviour
 {
-    [SerializeField] private GameObject floatingTextPrefab;
-    [SerializeField] private Transform worldSpaceCanvas;
+    [SerializeField] private GameObject floating_text_prefab;
 
     private void OnEnable()
     {
         // Subscribe to money events
-        game_events.On_added_money += ShowMoneyFloatingText;
+        game_events.On_added_money += show_floating_text;
     }
 
-    private void OnDisable()
+	private void OnDisable()
     {
         // Unsubscribe to prevent memory leaks
-        game_events.On_added_money -= ShowMoneyFloatingText;
+        game_events.On_added_money -= show_floating_text;
     }
 
-    private void ShowMoneyFloatingText(Vector3 position, int amount)
+    private void show_floating_text(Vector3 pos, int amount)
     {
-        // Don't show text for zero amounts
-        if (amount == 0) return;
-
-        // Calculate screen position (slightly above the actual position)
-        Vector3 spawnPosition = position + Vector3.up * 1.5f;
-
-        // Instantiate the floating text
-        GameObject textObj = Instantiate(floatingTextPrefab, spawnPosition, Quaternion.identity);
-
-        // If we have a world space canvas, parent to it
-        if (worldSpaceCanvas != null)
-            textObj.transform.SetParent(worldSpaceCanvas);
-
-        // Initialize with amount
-        floating_text textComponent = textObj.GetComponent<floating_text>();
-        if (textComponent != null)
+        Vector3 spawn_pos = pos + Vector3.up * 2f;
+        GameObject floating_text = Instantiate(floating_text_prefab, spawn_pos, Quaternion.identity);
+        floating_text text = floating_text.GetComponent<floating_text>();
+        if (text != null)
         {
-            textComponent.Initialize(amount);
+            text.init(amount);
         }
-        else
-        {
-            Debug.LogError("Floating text prefab missing floating_text component!");
-        }
+        floating_text.transform.forward = Camera.main.transform.forward; // Face the camera
 
-        // Make the text face the camera
-        textObj.transform.forward = Camera.main.transform.forward;
-    }
+	}
+
 }

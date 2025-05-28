@@ -20,7 +20,7 @@ public class building_controller : MonoBehaviour
     private GameObject building_prefab = null;
     private GameObject building_preview = null;
 
-    private Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
+    public static Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
     {
         {building_ids.HQ, 200},
         {building_ids.Barracks, 150},

@@ -18,10 +18,11 @@ public enum unit_ids
 
 public class unit_main : MonoBehaviour
 {
-    private LayerMask ground;
+    protected LayerMask ground;
     unit_movement unit_movement;
     unit_attacks unit_attacks;
     health_bar_controll health_bar_controller;
+    protected main_controller main_controller;
 
     public unit_ids unit_id = unit_ids.infantry_unit;
     public team_ids team_id = team_ids.Ayham_team;
@@ -31,7 +32,7 @@ public class unit_main : MonoBehaviour
     public int unit_damage = 100;
     public int unit_armor = 0;
     public float unit_range = 50f;
-    private bool is_selected = false;
+    protected bool is_selected = false;
     public bool is_alive = true;
     public bool is_attacking = false;
     private bool is_under_attack = false;
@@ -43,6 +44,7 @@ public class unit_main : MonoBehaviour
     void Start()
     {
         init_unit();
+        main_controller = FindObjectsByType<main_controller>(FindObjectsSortMode.None)[0];
         ground = LayerMask.GetMask("Ground");
         unit_movement = GetComponent<unit_movement>();
         if (unit_movement == null)
