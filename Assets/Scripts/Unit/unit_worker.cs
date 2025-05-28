@@ -4,6 +4,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using Mono.Cecil;
 using System.Runtime.CompilerServices;
+using UnityEngine.AI;
+using Unity.Mathematics;
 
 
 public enum faction_ids
@@ -48,6 +50,7 @@ public class unit_worker : unit_main
         unit_attack_speed = 0;
         unit_damage = 0;
         can_attack = false;
+        build_speed = 1f;
         // if bugs occurs. try setting unit range to 0
 
         temp_site_prefab = Resources.Load<GameObject>("Prefabs/temp_site");
@@ -67,6 +70,7 @@ public class unit_worker : unit_main
 
     void Update()
     {
+        Debug.Log(showcase_building_id);
         if (building_preview != null)
         {
             update_building_placement();
@@ -106,7 +110,11 @@ public class unit_worker : unit_main
                     base.set_move_order(pos);
                     current_state = build_states.Moving_to_building;
                     temp_site = Instantiate(temp_site_prefab, pos, Quaternion.identity);
-                    cancle_building_placement();
+                    if (building_preview != null)
+                    {
+                        Destroy(building_preview);
+                        building_preview = null;
+                    }
                 }
                 else
                 {
@@ -127,7 +135,7 @@ public class unit_worker : unit_main
         {
             building_prefabs.Add(building_ids.HQ, Resources.Load<GameObject>("Prefabs/Buildings/HQ/HQ"));
             building_prefabs.Add(building_ids.Barracks, Resources.Load<GameObject>("Prefabs/Buildings/Barracks/Barracks"));
-            building_prefabs.Add(building_ids.SupplyBase, Resources.Load<GameObject>("Prefabs/Buildings/SupplyBase/SupplyBase"));
+            building_prefabs.Add(building_ids.SupplyBase, Resources.Load<GameObject>("Prefabs/Buildings/supply_base/supply_base"));
 
             // do later the construction prefabs
             construction_prefabs.Add(building_ids.HQ, Resources.Load<GameObject>("Prefabs/Buildings/HQ/HQ_preview"));
@@ -160,7 +168,6 @@ public class unit_worker : unit_main
     private IEnumerator build_construction(Vector3 pos)
     {
         // Vector3 start_pos = Vector3(pos.x, pos.y - 3f, pos.z);
-        Debug.Log("i am here");
         GameObject construction_site = Instantiate(building_prefabs[showcase_building_id], new Vector3(pos.x, pos.y - 3f, pos.z), Quaternion.identity);
         while (current_state == build_states.Building)
         {
@@ -169,7 +176,8 @@ public class unit_worker : unit_main
                 current_state = build_states.Idle;
                 yield break;
             }
-            construction_site.transform.up += Vector3.up * build_speed * Time.deltaTime;
+            construction_site.transform.position += Vector3.up * build_speed * Time.deltaTime;
+            Debug.Log("Building construction progress: " + construction_site.transform.position.y);
             if (construction_site.transform.position.y >= pos.y)
             {
                 current_state = build_states.Idle;
@@ -180,11 +188,13 @@ public class unit_worker : unit_main
                     this_building.team_id = main_controller.my_team_id;
                 }
                 Destroy(construction_site);
+                construction_site = null;
                 Destroy(temp_site);
                 temp_site = null;
                 cancle_building_placement();
                 yield break;
             }
+            yield return null;
         }
     }
 
@@ -207,9 +217,12 @@ public class unit_worker : unit_main
         showcase_building_id = building_ids.None;
     }
 
-    public override void set_move_order(Vector3 dest)
-    {
-        current_state = build_states.Idle;
-        base.set_move_order(dest);
-    }
+	public override void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
+	{
+        if (current_state == build_states.Building || current_state == build_states.Moving_to_building)
+        {
+            cancle_building_placement();
+        }
+		base.unit_right_click(pos, target_unit, target_building, radius);
+	}
 }
