@@ -128,16 +128,16 @@ public class main_controller : MonoBehaviour
     }
     private void handle_left_click()
     {
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            // If the pointer is over a UI element, do nothing
+            return;
+        }
         bool is_multi_selecting = Input.GetKey(KeyCode.LeftAlt);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, clickable | ground))
         {
-            if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                // If the pointer is over a UI element, do nothing
-                return;
-            }
             if (!is_multi_selecting)
             {
                 de_select_all_units();
@@ -187,6 +187,26 @@ public class main_controller : MonoBehaviour
         }
         selected_units.Clear();
     }
+
+    public void add_unit(unit_main unit)
+    {
+        if (unit == null) return;
+        if (!all_units.Contains(unit))
+        {
+            all_units.Add(unit);
+        }
+    }
+
+    public void remove_unit(unit_main unit)
+    {
+        if (unit == null) return;
+        if (selected_units.Contains(unit))
+        {
+            selected_units.Remove(unit);
+            unit.set_select(false);
+        }
+    }
+
     public int get_money()
     {
         return money;

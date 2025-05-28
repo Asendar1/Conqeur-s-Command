@@ -119,6 +119,11 @@ public class unit_main : MonoBehaviour
     }
     public virtual void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
     {
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            // If the pointer is over a UI element, do nothing
+            return;
+        }
         if (can_attack)
         {
             if (target_unit != null && target_unit.team_id != team_id)

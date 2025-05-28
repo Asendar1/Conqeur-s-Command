@@ -6,6 +6,8 @@ using Mono.Cecil;
 using System.Runtime.CompilerServices;
 using UnityEngine.AI;
 using Unity.Mathematics;
+using Unity.VisualScripting;
+using UnityEditor.UI;
 
 
 public enum faction_ids
@@ -23,7 +25,9 @@ public class unit_worker : unit_main
     private GameObject building_preview = null;
     private GameObject temp_site_prefab = null;
     private GameObject temp_site = null;
+    private temp_site temp_script = null;
 
+    private Coroutine building_coroutine = null;
 
     private static Dictionary<building_ids, GameObject> building_prefabs = new Dictionary<building_ids, GameObject>();
     private static Dictionary<building_ids, GameObject> construction_prefabs = new Dictionary<building_ids, GameObject>();
@@ -31,7 +35,7 @@ public class unit_worker : unit_main
 
     [SerializeField] private float build_speed = 1f;
 
-    private enum build_states { Idle, Moving_to_building, Building };
+    private enum build_states { Idle, Moving_to_building, Moving_to_left_building, Building };
     [SerializeField] private build_states current_state = build_states.Idle;
 
     public static Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
@@ -65,12 +69,16 @@ public class unit_worker : unit_main
     private void OnDisable()
     {
         worker_unit_panel.on_building_button_click -= handle_building;
-        cancle_building_placement();
+        cancel_building_placement();
     }
 
     void Update()
     {
-        Debug.Log(showcase_building_id);
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+        {
+            // If the pointer is over a UI element, do nothing
+            return;
+        }
         if (building_preview != null)
         {
             update_building_placement();
@@ -81,7 +89,7 @@ public class unit_worker : unit_main
                 if (temp_site != null && (transform.position - temp_site.transform.position).sqrMagnitude < 2f * 2f)
                 {
                     current_state = build_states.Building;
-                    StartCoroutine(build_construction(temp_site.transform.position));
+                    building_coroutine = StartCoroutine(build_construction(temp_site.transform.position));
                 }
                 break;
         }
@@ -107,9 +115,12 @@ public class unit_worker : unit_main
             {
                 if (main_controller.spend_money(buildings_cost[showcase_building_id]))
                 {
+                    main_controller.remove_unit(this);
                     base.set_move_order(pos);
                     current_state = build_states.Moving_to_building;
                     temp_site = Instantiate(temp_site_prefab, pos, Quaternion.identity);
+                    temp_script = temp_site.GetComponent<temp_site>();
+                    temp_script.team_id = main_controller.my_team_id;
                     if (building_preview != null)
                     {
                         Destroy(building_preview);
@@ -118,13 +129,14 @@ public class unit_worker : unit_main
                 }
                 else
                 {
+                    cancel_building_placement();
                     Debug.Log("You can't abuse this can you | you are poor now");
                 }
             }
         }
         if (Input.GetMouseButtonDown(1)) // Right click
         {
-            cancle_building_placement();
+            cancel_building_placement();
         }
     }
 
@@ -146,6 +158,11 @@ public class unit_worker : unit_main
     private void handle_building(building_ids ids)
     {
         if (!is_selected) return;
+        if (this != main_controller.selected_units[0])
+        {
+            return;
+        }
+
         start_building(ids);
     }
 
@@ -168,46 +185,41 @@ public class unit_worker : unit_main
     private IEnumerator build_construction(Vector3 pos)
     {
         // Vector3 start_pos = Vector3(pos.x, pos.y - 3f, pos.z);
-        GameObject construction_site = Instantiate(building_prefabs[showcase_building_id], new Vector3(pos.x, pos.y - 3f, pos.z), Quaternion.identity);
-        while (current_state == build_states.Building)
+        while (temp_script.is_completed == false)
         {
-            if (construction_site == null)
+            if (temp_site == null)
             {
                 current_state = build_states.Idle;
-                yield break;
+                yield break; // Exit if the temp site is destroyed
             }
-            construction_site.transform.position += Vector3.up * build_speed * Time.deltaTime;
-            Debug.Log("Building construction progress: " + construction_site.transform.position.y);
-            if (construction_site.transform.position.y >= pos.y)
-            {
-                current_state = build_states.Idle;
-                GameObject new_building = Instantiate(building_prefabs[showcase_building_id], pos, Quaternion.identity);
-                building_main this_building = new_building.GetComponent<building_main>();
-                if (this_building != null)
-                {
-                    this_building.team_id = main_controller.my_team_id;
-                }
-                Destroy(construction_site);
-                construction_site = null;
-                Destroy(temp_site);
-                temp_site = null;
-                cancle_building_placement();
-                yield break;
-            }
+            temp_script.build_progress += Time.deltaTime * build_speed;
             yield return null;
         }
+        // when the building is completed
+        current_state = build_states.Idle;
+        Destroy(temp_site);
+        temp_site = null;
+        temp_script = null;
+        GameObject new_building = Instantiate(building_prefabs[showcase_building_id], pos, Quaternion.identity);
+        building_main this_building = new_building.GetComponent<building_main>();
+        if (this_building != null)
+        {
+            this_building.team_id = main_controller.my_team_id;
+            this_building.building_id = showcase_building_id;
+        }
+        cancel_building_placement();
     }
 
     private void start_building(building_ids ids)
     {
-        cancle_building_placement();
+        cancel_building_placement();
 
         showcase_building_id = ids;
         GameObject prefab = construction_prefabs[ids];
         building_preview = Instantiate(prefab);
     }
 
-    private void cancle_building_placement()
+    private void cancel_building_placement()
     {
         if (building_preview != null)
         {
@@ -219,9 +231,27 @@ public class unit_worker : unit_main
 
 	public override void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
 	{
-        if (current_state == build_states.Building || current_state == build_states.Moving_to_building)
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
         {
-            cancle_building_placement();
+            // If the pointer is over a UI element, do nothing
+            return;
+        }
+        current_state = build_states.Idle;
+        if (building_coroutine != null)
+        {
+            StopCoroutine(building_coroutine);
+            building_coroutine = null;
+        }
+        temp_script = target_building as temp_site;
+        if (temp_script != null && temp_script.team_id == main_controller.my_team_id && temp_script.is_left)
+        {
+            // if its a left building, start building it
+            showcase_building_id = target_building.building_id;
+            temp_site = temp_script.gameObject;
+            temp_script.is_left = false;
+            set_move_order(temp_site.transform.position);
+            current_state = build_states.Moving_to_left_building;
+            return;
         }
 		base.unit_right_click(pos, target_unit, target_building, radius);
 	}
