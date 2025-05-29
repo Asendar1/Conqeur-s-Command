@@ -45,7 +45,6 @@ public class unit_worker : unit_main
         {building_ids.SupplyBase, 125}
     };
 
-
     protected override void init_unit()
     {
         unit_id = unit_ids.worker_unit;
@@ -72,6 +71,13 @@ public class unit_worker : unit_main
         cancel_building_placement();
     }
 
+    private void OnDestroy()
+    {
+        if (temp_site != null && temp_script != null)
+        {
+            temp_script.is_left = true;
+        }
+    }
     void Update()
     {
         if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -111,28 +117,30 @@ public class unit_worker : unit_main
                 renderer.material.color = is_valid_position ? Color.green : Color.red;
             }
             // building_preview.GetComponent<Renderer>().material.color = is_valid_position ? Color.green : Color.red;
-            if (Input.GetMouseButtonDown(0) && is_valid_position)
-            {
-                if (main_controller.spend_money(buildings_cost[showcase_building_id]))
+                if (Input.GetMouseButtonDown(0) && is_valid_position)
                 {
-                    main_controller.remove_unit(this);
-                    base.set_move_order(pos);
-                    current_state = build_states.Moving_to_building;
-                    temp_site = Instantiate(temp_site_prefab, pos, Quaternion.identity);
-                    temp_script = temp_site.GetComponent<temp_site>();
-                    temp_script.team_id = main_controller.my_team_id;
-                    if (building_preview != null)
+                    if (main_controller.spend_money(buildings_cost[showcase_building_id]))
                     {
-                        Destroy(building_preview);
-                        building_preview = null;
+                        main_controller.remove_unit(this);
+                        base.set_move_order(pos);
+                        current_state = build_states.Moving_to_building;
+                        temp_site = Instantiate(temp_site_prefab, pos, Quaternion.identity);
+                        temp_script = temp_site.GetComponent<temp_site>();
+                        temp_script.team_id = main_controller.my_team_id;
+                        temp_script.building_id = building_ids.None;
+                        temp_script.building_id_when_completed = showcase_building_id;
+                        if (building_preview != null)
+                        {
+                            Destroy(building_preview);
+                            building_preview = null;
+                        }
+                    }
+                    else
+                    {
+                        cancel_building_placement();
+                        Debug.Log("You can't abuse this can you | you are poor now");
                     }
                 }
-                else
-                {
-                    cancel_building_placement();
-                    Debug.Log("You can't abuse this can you | you are poor now");
-                }
-            }
         }
         if (Input.GetMouseButtonDown(1)) // Right click
         {
@@ -192,7 +200,7 @@ public class unit_worker : unit_main
                 current_state = build_states.Idle;
                 yield break; // Exit if the temp site is destroyed
             }
-            temp_script.build_progress += Time.deltaTime * build_speed;
+            temp_script.add_progress(Time.deltaTime * build_speed);
             yield return null;
         }
         // when the building is completed
@@ -236,6 +244,10 @@ public class unit_worker : unit_main
             // If the pointer is over a UI element, do nothing
             return;
         }
+        if (temp_site != null && temp_script != null)
+        {
+            temp_script.is_left = true;
+        }
         current_state = build_states.Idle;
         if (building_coroutine != null)
         {
@@ -246,13 +258,15 @@ public class unit_worker : unit_main
         if (temp_script != null && temp_script.team_id == main_controller.my_team_id && temp_script.is_left)
         {
             // if its a left building, start building it
-            showcase_building_id = target_building.building_id;
+            showcase_building_id = temp_script.building_id_when_completed;
             temp_site = temp_script.gameObject;
             temp_script.is_left = false;
             set_move_order(temp_site.transform.position);
-            current_state = build_states.Moving_to_left_building;
+            current_state = build_states.Moving_to_building;
             return;
         }
+        temp_script = null;
+        temp_site = null;
 		base.unit_right_click(pos, target_unit, target_building, radius);
 	}
 }
