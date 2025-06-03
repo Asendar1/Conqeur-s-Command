@@ -29,8 +29,8 @@ public class unit_worker : unit_main
 
     private Coroutine building_coroutine = null;
 
-    private static Dictionary<building_ids, GameObject> building_prefabs = new Dictionary<building_ids, GameObject>();
-    private static Dictionary<building_ids, GameObject> construction_prefabs = new Dictionary<building_ids, GameObject>();
+    private Dictionary<building_ids, GameObject> building_prefabs = new Dictionary<building_ids, GameObject>();
+    private Dictionary<building_ids, GameObject> construction_prefabs = new Dictionary<building_ids, GameObject>();
 
 
     [SerializeField] private float build_speed = 1f;
@@ -38,7 +38,7 @@ public class unit_worker : unit_main
     private enum build_states { Idle, Moving_to_building, Moving_to_left_building, Building };
     [SerializeField] private build_states current_state = build_states.Idle;
 
-    public static Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
+    public Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
     {
         {building_ids.HQ, 200},
         {building_ids.Barracks, 150},
