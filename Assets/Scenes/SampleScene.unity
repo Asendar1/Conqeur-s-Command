@@ -2010,6 +2010,8 @@ MonoBehaviour:
   selected_units: []
   my_team_id: 0
   money_text: {fileID: 972433283}
+  cell1: {x: 0, y: 0, z: 0}
+  cell2: {x: 0, y: 0, z: 0}
   money: 500
   power: 0
 --- !u!4 &992821919
@@ -2471,7 +2473,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   draw_grid: 1
-  gird_size: 1
+  cell_size: 2
 --- !u!4 &1350907156
 Transform:
   m_ObjectHideFlags: 0
@@ -2951,6 +2953,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1803853929}
+  - component: {fileID: 1803853930}
   m_Layer: 0
   m_Name: path_finder_system
   m_TagString: Untagged
@@ -2973,6 +2976,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1803853930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1803853928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d0be09422f661048b55ac431da9c7e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1811168753
 PrefabInstance:
   m_ObjectHideFlags: 0

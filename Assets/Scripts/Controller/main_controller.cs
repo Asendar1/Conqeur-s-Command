@@ -5,6 +5,7 @@ using System.Data.SqlTypes;
 using UnityEngine.UI;
 using Unity.Collections;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
 
 public class main_controller : MonoBehaviour
 {
@@ -20,6 +21,12 @@ public class main_controller : MonoBehaviour
     [SerializeField] private TextMeshProUGUI money_text;
 
 
+    //test
+    [Header("test variables")]
+    [SerializeField] private Vector3 cell1;
+    [SerializeField] private Vector3 cell2;
+
+    [Space(10)]
     [SerializeField] private int money = 1500;
     [SerializeField] private int power = 0;
 
@@ -95,36 +102,56 @@ public class main_controller : MonoBehaviour
             spawn_text.y = 0;
             game_events.added_money(spawn_text, -100);
         }
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground))
+            {
+                cell1 = hit.point;
+                Debug.Log($"Z pressed: Selected cell1 at world position {cell1}");
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground))
+            {
+                cell2 = hit.point;
+                Debug.Log($"X pressed: Selected cell2 at world position {cell2}");
+            }
+        }
     }
 
     private void handle_right_click()
     {
-        if (selected_units.Count == 0) return;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | clickable))
-        {
+        path_finding_system.instance.find_path(cell1, cell2);
+        // if (selected_units.Count == 0) return;
+        // Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        // if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | clickable))
+        // {
 
-            target_unit = null;
-            target_building = null;
-            if (hit.collider.CompareTag("Unit"))
-            {
-                target_unit = hit.collider.GetComponent<unit_main>();
-            }
-            else if (hit.collider.CompareTag("Building"))
-            {
-                target_building = hit.collider.GetComponent<building_main>();
-            }
-            if (selected_units.Count == 1)
-            {
-                selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
-                return;
-            }
-            float radius = Mathf.Sqrt(selected_units.Count) * 1.2f;
-            foreach (unit_main unit in selected_units)
-            {
-                unit.unit_right_click(hit.point, target_unit, target_building, radius);
-            }
-        }
+        //     target_unit = null;
+        //     target_building = null;
+        //     if (hit.collider.CompareTag("Unit"))
+        //     {
+        //         target_unit = hit.collider.GetComponent<unit_main>();
+        //     }
+        //     else if (hit.collider.CompareTag("Building"))
+        //     {
+        //         target_building = hit.collider.GetComponent<building_main>();
+        //     }
+        //     if (selected_units.Count == 1)
+        //     {
+        //         selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
+        //         return;
+        //     }
+        //     float radius = Mathf.Sqrt(selected_units.Count) * 1.2f;
+        //     foreach (unit_main unit in selected_units)
+        //     {
+        //         unit.unit_right_click(hit.point, target_unit, target_building, radius);
+        //     }
+        // }
     }
     private void handle_left_click()
     {
