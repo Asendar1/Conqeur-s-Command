@@ -52,9 +52,9 @@ public class grid_system : MonoBehaviour
             for (int z = 0; z < grid_z; z++)
             {
                 // Create Cell
-                Vector3 world_pos = new Vector3(terrain.transform.position.x + x * cell_size,
+                Vector3 world_pos = new Vector3(terrain.transform.position.x + x * cell_size + cell_size * 0.5f,
                                                 0f,
-                                                terrain.transform.position.z + z * cell_size);
+                                                terrain.transform.position.z + z * cell_size + cell_size * 0.5f);
                 float height = terrain.SampleHeight(world_pos);
                 world_pos.y = height;
                 grid[x, z] = new Cell(world_pos, x, z, height);
@@ -86,9 +86,9 @@ public class grid_system : MonoBehaviour
         {
             for (int z = 0; z < chunk_count_z; z++)
             {
-                Vector3 world_pos = new Vector3(terrain.transform.position.x + x * chunk_size * cell_size,
+                Vector3 world_pos = new Vector3(terrain.transform.position.x + (x * chunk_size * cell_size) + (chunk_size * cell_size * .5f),
                                                 0f,
-                                                terrain.transform.position.z + z * chunk_size * cell_size);
+                                                terrain.transform.position.z + (z * chunk_size * cell_size) + (chunk_size * cell_size * .5f));
                 chunks[x, z] = new Chunk(world_pos, x, z, chunk_size);
             }
         }
@@ -96,8 +96,8 @@ public class grid_system : MonoBehaviour
 
     public Cell get_cell_from_world_position(Vector3 world_position)
     {
-        int x = Mathf.FloorToInt(world_position.x / cell_size);
-        int z = Mathf.FloorToInt(world_position.z / cell_size);
+        int x = Mathf.FloorToInt((world_position.x - terrain.transform.position.x) / cell_size);
+        int z = Mathf.FloorToInt((world_position.z - terrain.transform.position.z) / cell_size);
 
         if (x < 0 || x >= grid_x || z < 0 || z >= grid_z)
         {
@@ -167,24 +167,26 @@ public class grid_system : MonoBehaviour
 
     void OnDrawGizmos()
     {
-
-        for (int x = 0; x < grid_x; x++)
+        // Draw cells
+        if (grid != null)
         {
-            for (int z = 0; z < grid_z; z++)
+            for (int x = 0; x < grid_x; x++)
             {
-                if (grid[x, z] != null)
+                for (int z = 0; z < grid_z; z++)
                 {
-                    // Get region for this cell
-                    int rx = x / chunk_size;
-                    int rz = z / chunk_size;
-
+                    if (grid[x, z] != null)
+                    {
                         Gizmos.color = grid[x, z].is_walkable ? Color.green : Color.red;
                         Vector3 world_pos = grid[x, z].world_position;
                         Gizmos.DrawWireCube(world_pos, new Vector3(cell_size * 0.9f, 0.1f, cell_size * 0.9f));
+                    }
                 }
             }
         }
 
+        // Draw chunk boundaries
+        if (chunks != null)
+        {
             Gizmos.color = Color.blue;
             for (int rx = 0; rx < chunks_x; rx++)
             {
@@ -192,11 +194,16 @@ public class grid_system : MonoBehaviour
                 {
                     if (chunks[rx, rz] != null)
                     {
-                        Bounds bounds = chunks[rx, rz].bounds;
-                        Gizmos.DrawWireCube(bounds.center, bounds.size);
+                        // Draw actual chunk size
+                        float chunk_world_size = chunk_size * cell_size;
+                        Gizmos.DrawWireCube(
+                            chunks[rx, rz].world_pos,
+                            new Vector3(chunk_world_size, 1f, chunk_world_size)
+                        );
                     }
                 }
             }
+        }
     }
 
 }
@@ -245,6 +252,6 @@ public class Chunk
         this.chunk_z = chunk_z;
 
         cells = new Cell[size, size];
-        bounds = new Bounds(world_pos, new Vector3(size, 100f, size));
+        bounds = new Bounds(world_pos, new Vector3(size * grid_system.instance.cell_size, 100f, size * grid_system.instance.cell_size));
     }
 }
