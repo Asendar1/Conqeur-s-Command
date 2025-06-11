@@ -12,11 +12,12 @@ public class grid_system : MonoBehaviour
 
     [Header("Grid Settings")]
     [SerializeField] private int chunk_size = 10;
-    public float cell_size = 2f;
+    public float cell_size = .5f;
     private int grid_x, grid_z;
     private int chunks_x, chunks_z;
     private Cell[,] grid;
     private Chunk[,] chunks;
+
 
     void Awake()
     {

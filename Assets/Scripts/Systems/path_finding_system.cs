@@ -1,10 +1,11 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class path_finding_system : MonoBehaviour
 {
     public static path_finding_system instance;
+    private List<GameObject> debug_planes = new List<GameObject>();
+
 
     void Awake()
     {
@@ -20,6 +21,7 @@ public class path_finding_system : MonoBehaviour
 
     public List<Cell> find_path(Vector3 start, Vector3 end)
     {
+        clean_debug_planes();
         Cell start_cell = grid_system.instance.get_cell_from_world_position(start);
         Cell end_cell = grid_system.instance.get_cell_from_world_position(end);
 
@@ -58,13 +60,14 @@ public class path_finding_system : MonoBehaviour
             {
                 if (!neighbor.is_walkable || closed_set.Contains(neighbor))
                 {
-                    if (!neighbor.is_walkable)
-                    {
-                        GameObject plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                        plane.transform.position = neighbor.world_position + Vector3.up * 0.1f;
-                        plane.transform.localScale = new Vector3(.2f, .2f, .2f);
-                        plane.GetComponent<Renderer>().material.color = Color.red;
-                    }
+                    // if (!neighbor.is_walkable)
+                    // {
+                    //     GameObject plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                    //     debug_planes.Add(plane);
+                    //     plane.transform.position = neighbor.world_position + Vector3.up * 0.1f;
+                    //     plane.transform.localScale = new Vector3(.2f, .2f, .2f);
+                    //     plane.GetComponent<Renderer>().material.color = Color.red;
+                    // }
                     continue;
                 }
                 int move_cost = current_cell.g_cost + get_distance(current_cell, neighbor);
@@ -83,7 +86,19 @@ public class path_finding_system : MonoBehaviour
         return null;
     } // ? (1, 3) (4, 5) distX = 3 distZ = 2 38 | 32
 
-    private int get_distance(Cell cell_a, Cell cell_b)
+    private void clean_debug_planes()
+    {
+        foreach (GameObject plane in debug_planes)
+        {
+            if (plane != null)
+            {
+                Destroy(plane);
+            }
+        }
+        debug_planes.Clear();
+	}
+
+	private int get_distance(Cell cell_a, Cell cell_b)
     {
         int dist_x = Mathf.Abs(cell_a.grid_x - cell_b.grid_x);
         int dist_z = Mathf.Abs(cell_a.grid_z - cell_b.grid_z);
@@ -102,13 +117,14 @@ public class path_finding_system : MonoBehaviour
             cell = cell.parent;
         }
         path.Reverse();
-        foreach (Cell c in path)
-        {
-            GameObject plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            plane.transform.position = c.world_position + Vector3.up * 0.5f;
-            plane.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-            plane.GetComponent<Renderer>().material.color = Color.green;
-        }
+        // foreach (Cell c in path)
+        // {
+        //     GameObject plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        //     debug_planes.Add(plane);
+        //     plane.transform.position = c.world_position + Vector3.up * 0.5f;
+        //     plane.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+        //     plane.GetComponent<Renderer>().material.color = Color.green;
+        // }
         return path;
     }
 

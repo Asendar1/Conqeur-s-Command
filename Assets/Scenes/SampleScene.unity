@@ -2472,7 +2472,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b75ef96742573934480e51c1dc2311d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  draw_grid: 1
+  chunk_size: 10
   cell_size: 2
 --- !u!4 &1350907156
 Transform:
@@ -2960,7 +2960,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1803853929
 Transform:
   m_ObjectHideFlags: 0
