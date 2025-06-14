@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 439772719945179923}
   - component: {fileID: 6646099978250796131}
   - component: {fileID: 478291743546073277}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: HQ
   m_TagString: Building
   m_Icon: {fileID: 0}

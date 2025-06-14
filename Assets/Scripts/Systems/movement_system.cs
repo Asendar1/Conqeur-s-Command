@@ -8,25 +8,19 @@ public class movement_system : MonoBehaviour
     public static movement_system instance;
 
     [Header("Performance Settings")]
-    [SerializeField] private int units_per_batch = 50;
-    [SerializeField] private float batch_processing_interval = 0.05f; // 50 ms
-    [SerializeField] private int recalc_units_per_frame = 20; // Limit recalculations per frame
+    [SerializeField] private int units_per_batch = 25; // Reduced for better responsiveness
+    [SerializeField] private float batch_processing_interval = 0.02f; // Faster batching (50 FPS)
+    [SerializeField] private int recalc_units_per_frame = 10; // Reduced recalc load
 
     [Header("Movement Settings")]
     [SerializeField] private LayerMask obstacle_layer = -1;
     [SerializeField] private float ray_distance = 10f;
     [SerializeField] private float obstacle_avoidance_distance = 3f;
 
-    // Data Structures for better performance
     private List<movement_data> move_data = new List<movement_data>();
     private List<Transform> unit_transforms = new List<Transform>();
     private Queue<int> proc_queue = new Queue<int>();
     private List<int> units_needing_recalc = new List<int>();
-
-    // Event systems for future use
-    public static event Action<Bounds> on_terrain_changed;
-    public static event Action<Vector3> on_obstacle_added;
-    public static event Action<Vector3> on_obstacle_removed;
 
     [System.Serializable]
     public struct movement_data
@@ -40,6 +34,7 @@ public class movement_system : MonoBehaviour
         public bool is_moving;
         public float last_calc_time;
         public bool need_recalc;
+        public float last_move_time; // Track when unit was last moved
     }
 
     public enum movement_type
@@ -55,7 +50,7 @@ public class movement_system : MonoBehaviour
         {
             instance = this;
             StartCoroutine(proc_movement_batches());
-            // Subscribe to events when ready
+            StartCoroutine(apply_all_movement()); // Separate smooth movement loop
         }
         else
         {
@@ -63,26 +58,152 @@ public class movement_system : MonoBehaviour
         }
     }
 
-    void OnDestroy()
+    // Separate coroutine for smooth movement application
+    private IEnumerator apply_all_movement()
     {
-        // Unsubscribe from events when ready
+        while (true)
+        {
+            // Apply movement to ALL moving units every frame for smooth movement
+            for (int i = 0; i < move_data.Count; i++)
+            {
+                if (i < unit_transforms.Count && move_data[i].is_moving && unit_transforms[i] != null)
+                {
+                    apply_smooth_movement(i);
+                }
+            }
+            yield return null; // Every frame
+        }
     }
 
     private IEnumerator proc_movement_batches()
     {
         while (true)
         {
-            // Process recalculations first (limited per frame)
+            // Process recalculations in small batches
             if (units_needing_recalc.Count > 0)
             {
                 proc_recalc_batch();
             }
 
-            // Process regular movement batch
-            proc_move_batch();
+            // Process logic updates in batches (not movement application)
+            proc_logic_batch();
 
             yield return new WaitForSeconds(batch_processing_interval);
         }
+    }
+
+    private void apply_smooth_movement(int i)
+    {
+        movement_data data = move_data[i];
+        Transform transform = unit_transforms[i];
+
+        if (transform == null)
+        {
+            remove_unit(i);
+            return;
+        }
+
+        // Use frame-rate independent time
+        float delta_time = Time.deltaTime;
+        Vector3 direction = data.cached_dir;
+
+        if (direction == Vector3.zero)
+        {
+            // No direction calculated yet, calculate basic direction
+            direction = (data.dest - transform.position).normalized;
+        }
+
+        // Apply movement based on type with proper deltaTime
+        switch (data.type)
+        {
+            case movement_type.Infantry:
+                apply_infantry_movement_smooth(ref data, transform, direction, delta_time);
+                break;
+            case movement_type.Vehicle:
+                apply_vehicle_movement_smooth(ref data, transform, direction, delta_time);
+                break;
+            case movement_type.Aircraft:
+                apply_aircraft_movement_smooth(ref data, transform, direction, delta_time);
+                break;
+        }
+
+        // Check if reached destination
+        if (Vector3.Distance(transform.position, data.dest) < 1f)
+        {
+            data.is_moving = false;
+            data.current_velocity = Vector3.zero;
+        }
+
+        data.last_move_time = Time.time;
+        move_data[i] = data;
+    }
+
+    private void apply_infantry_movement_smooth(ref movement_data data, Transform transform, Vector3 direction, float delta_time)
+    {
+        if (direction != Vector3.zero)
+        {
+            // Smooth rotation
+            Quaternion target_rotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, target_rotation,
+                data.turn_speed * delta_time);
+        }
+
+        // Smooth acceleration
+        Vector3 target_velocity = direction * data.max_speed;
+        data.current_velocity = Vector3.MoveTowards(data.current_velocity, target_velocity,
+            10f * delta_time); // Acceleration rate
+
+        // Apply position change
+        transform.position += data.current_velocity * delta_time;
+    }
+
+    private void apply_vehicle_movement_smooth(ref movement_data data, Transform transform, Vector3 direction, float delta_time)
+    {
+        if (direction != Vector3.zero)
+        {
+            // Limited turning for vehicles
+            float angle = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
+            float max_turn = data.turn_speed * delta_time;
+            float actual_turn = Mathf.Clamp(angle, -max_turn, max_turn);
+
+            transform.Rotate(0, actual_turn, 0);
+        }
+
+        // Vehicle moves forward based on alignment
+        float alignment = Vector3.Dot(transform.forward, direction);
+        float target_speed = Mathf.Clamp01(alignment) * data.max_speed;
+
+        // Smooth acceleration
+        float current_speed = data.current_velocity.magnitude;
+        float new_speed = Mathf.MoveTowards(current_speed, target_speed, 5f * delta_time);
+
+        data.current_velocity = transform.forward * new_speed;
+        transform.position += data.current_velocity * delta_time;
+    }
+
+    private void apply_aircraft_movement_smooth(ref movement_data data, Transform transform, Vector3 direction, float delta_time)
+    {
+        if (direction != Vector3.zero)
+        {
+            // Banking turns
+            float turn_amount = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
+            float max_turn = data.turn_speed * delta_time;
+            float actual_turn = Mathf.Clamp(turn_amount, -max_turn, max_turn);
+
+            transform.Rotate(0, actual_turn, 0);
+
+            // Banking effect
+            float bank = -actual_turn * 30f / max_turn;
+            transform.rotation = Quaternion.Euler(transform.eulerAngles.x,
+                transform.eulerAngles.y, bank);
+        }
+
+        // Smooth acceleration
+        Vector3 target_velocity = transform.forward * data.max_speed;
+        data.current_velocity = Vector3.MoveTowards(data.current_velocity, target_velocity,
+            8f * delta_time);
+
+        transform.position += data.current_velocity * delta_time;
     }
 
     private void proc_recalc_batch()
@@ -109,7 +230,7 @@ public class movement_system : MonoBehaviour
         }
     }
 
-    private void proc_move_batch()
+    private void proc_logic_batch()
     {
         int processed = 0;
 
@@ -119,7 +240,7 @@ public class movement_system : MonoBehaviour
 
             if (unit_i < move_data.Count && move_data[unit_i].is_moving)
             {
-                proc_single_unit(unit_i);
+                proc_single_unit_logic(unit_i);
 
                 // Re-queue if still moving
                 if (move_data[unit_i].is_moving)
@@ -131,7 +252,7 @@ public class movement_system : MonoBehaviour
         }
     }
 
-    private void proc_single_unit(int i)
+    private void proc_single_unit_logic(int i)
     {
         if (i >= move_data.Count || i >= unit_transforms.Count) return;
 
@@ -144,67 +265,14 @@ public class movement_system : MonoBehaviour
             return;
         }
 
-        // Use cached direction or mark for recalculation
-        Vector3 dir = data.cached_dir;
-        if (data.need_recalc || Time.time - data.last_calc_time > 0.5f)
+        // Check if we need to recalculate path
+        if (data.need_recalc || Time.time - data.last_calc_time > 0.3f) // More frequent recalc
         {
-            // Don't recalculate immediately - queue it instead for better performance
             if (!units_needing_recalc.Contains(i))
             {
                 units_needing_recalc.Add(i);
                 data.need_recalc = true;
                 move_data[i] = data;
-            }
-        }
-
-        // Apply movement with current cached direction
-        apply_movement(i, dir);
-
-        // Check if reached destination
-        if (Vector3.Distance(transform.position, data.dest) < 1f)
-        {
-            data.is_moving = false;
-            move_data[i] = data;
-        }
-    }
-
-    private void remove_unit(int i)
-    {
-        if (i < move_data.Count)
-        {
-            move_data.RemoveAt(i);
-            unit_transforms.RemoveAt(i);
-            units_needing_recalc.Remove(i);
-
-            // Update indices in queues since we removed an item
-            UpdateQueueIndices(i);
-        }
-    }
-
-    private void UpdateQueueIndices(int removed_index)
-    {
-        // Update proc_queue indices
-        Queue<int> updated_proc_queue = new Queue<int>();
-        while (proc_queue.Count > 0)
-        {
-            int index = proc_queue.Dequeue();
-            if (index > removed_index)
-                updated_proc_queue.Enqueue(index - 1);
-            else if (index < removed_index)
-                updated_proc_queue.Enqueue(index);
-            // Skip the removed index
-        }
-        proc_queue = updated_proc_queue;
-
-        // Update recalc list indices
-        for (int i = 0; i < units_needing_recalc.Count; i++)
-        {
-            if (units_needing_recalc[i] > removed_index)
-                units_needing_recalc[i]--;
-            else if (units_needing_recalc[i] == removed_index)
-            {
-                units_needing_recalc.RemoveAt(i);
-                i--;
             }
         }
     }
@@ -231,7 +299,7 @@ public class movement_system : MonoBehaviour
 
     private Vector3 find_another_dir(Vector3 pos, Vector3 original_dir)
     {
-        float[] angles = { -30f, 30f, -60f, 60f, -90f, 90f, -120f, 120f };
+        float[] angles = { -30f, 30f, -60f, 60f, -90f, 90f };
 
         foreach (float angle in angles)
         {
@@ -242,86 +310,46 @@ public class movement_system : MonoBehaviour
                 return test_dir;
             }
         }
-        return original_dir; // Fallback to original direction if no alternative found
+        return original_dir;
     }
 
-    private void apply_movement(int i, Vector3 dir)
+    private void remove_unit(int i)
     {
-        movement_data data = move_data[i];
-        Transform transform = unit_transforms[i];
-
-        switch (data.type)
+        if (i < move_data.Count)
         {
-            case movement_type.Infantry:
-                apply_infantry_movement(ref data, transform, dir);
-                break;
-            case movement_type.Vehicle:
-                apply_vehicle_movement(ref data, transform, dir);
-                break;
-            case movement_type.Aircraft:
-                apply_aircraft_movement(ref data, transform, dir);
-                break;
+            move_data.RemoveAt(i);
+            unit_transforms.RemoveAt(i);
+            units_needing_recalc.Remove(i);
+            UpdateQueueIndices(i);
         }
-        move_data[i] = data;
     }
 
-    private void apply_infantry_movement(ref movement_data data, Transform transform, Vector3 direction)
+    private void UpdateQueueIndices(int removed_index)
     {
-        if (direction != Vector3.zero)
+        Queue<int> updated_proc_queue = new Queue<int>();
+        while (proc_queue.Count > 0)
         {
-            Quaternion target_rotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, target_rotation,
-                data.turn_speed * Time.fixedDeltaTime);
+            int index = proc_queue.Dequeue();
+            if (index > removed_index)
+                updated_proc_queue.Enqueue(index - 1);
+            else if (index < removed_index)
+                updated_proc_queue.Enqueue(index);
         }
+        proc_queue = updated_proc_queue;
 
-        data.current_velocity = Vector3.MoveTowards(data.current_velocity,
-            direction * data.max_speed, 10f * Time.fixedDeltaTime);
-
-        transform.position += data.current_velocity * Time.fixedDeltaTime;
+        for (int i = 0; i < units_needing_recalc.Count; i++)
+        {
+            if (units_needing_recalc[i] > removed_index)
+                units_needing_recalc[i]--;
+            else if (units_needing_recalc[i] == removed_index)
+            {
+                units_needing_recalc.RemoveAt(i);
+                i--;
+            }
+        }
     }
 
-    private void apply_vehicle_movement(ref movement_data data, Transform transform, Vector3 direction)
-    {
-        if (direction != Vector3.zero)
-        {
-            float angle = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
-            float max_turn = data.turn_speed * Time.fixedDeltaTime;
-            float actual_turn = Mathf.Clamp(angle, -max_turn, max_turn);
-
-            transform.Rotate(0, actual_turn, 0);
-        }
-
-        float alignment = Vector3.Dot(transform.forward, direction);
-        float target_speed = Mathf.Clamp01(alignment) * data.max_speed;
-
-        data.current_velocity = Vector3.MoveTowards(data.current_velocity,
-            transform.forward * target_speed, 5f * Time.fixedDeltaTime);
-
-        transform.position += data.current_velocity * Time.fixedDeltaTime;
-    }
-
-    private void apply_aircraft_movement(ref movement_data data, Transform transform, Vector3 direction)
-    {
-        if (direction != Vector3.zero)
-        {
-            float turn_amount = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
-            float max_turn = data.turn_speed * Time.fixedDeltaTime;
-            float actual_turn = Mathf.Clamp(turn_amount, -max_turn, max_turn);
-
-            transform.Rotate(0, actual_turn, 0);
-
-            float bank = -actual_turn * 30f / max_turn;
-            transform.rotation = Quaternion.Euler(transform.eulerAngles.x,
-                transform.eulerAngles.y, bank);
-        }
-
-        data.current_velocity = Vector3.MoveTowards(data.current_velocity,
-            transform.forward * data.max_speed, 8f * Time.fixedDeltaTime);
-
-        transform.position += data.current_velocity * Time.fixedDeltaTime;
-    }
-
-    // Public API
+    // Public API remains the same
     public int register_unit(Transform unit_transform, movement_type type, float speed = 5f, float turn_speed = 180f)
     {
         movement_data data = new movement_data
@@ -334,12 +362,12 @@ public class movement_system : MonoBehaviour
             type = type,
             is_moving = false,
             last_calc_time = Time.time,
-            need_recalc = false
+            need_recalc = false,
+            last_move_time = Time.time
         };
 
         move_data.Add(data);
         unit_transforms.Add(unit_transform);
-
         return move_data.Count - 1;
     }
 
@@ -366,26 +394,17 @@ public class movement_system : MonoBehaviour
         {
             movement_data data = move_data[unit_id];
             data.is_moving = false;
+            data.current_velocity = Vector3.zero;
             move_data[unit_id] = data;
         }
     }
 
-    // Helper method to mark units for recalculation (for future event system)
-    public void mark_units_for_recalc_in_area(Vector3 center, float radius)
+    public bool is_moving(int unit_id)
     {
-        for (int i = 0; i < unit_transforms.Count; i++)
+        if (unit_id < move_data.Count)
         {
-            if (unit_transforms[i] != null &&
-                Vector3.Distance(unit_transforms[i].position, center) <= radius)
-            {
-                if (!units_needing_recalc.Contains(i))
-                {
-                    units_needing_recalc.Add(i);
-                    movement_data data = move_data[i];
-                    data.need_recalc = true;
-                    move_data[i] = data;
-                }
-            }
+            return move_data[unit_id].is_moving;
         }
+        return false;
     }
 }

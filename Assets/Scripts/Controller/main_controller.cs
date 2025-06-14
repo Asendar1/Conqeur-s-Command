@@ -6,11 +6,13 @@ using UnityEngine.UI;
 using Unity.Collections;
 using UnityEngine.InputSystem;
 using Unity.VisualScripting;
+using UnityEngine.AI;
 
 public class main_controller : MonoBehaviour
 {
     private LayerMask ground;
-    private LayerMask clickable;
+    private LayerMask unit;
+    private LayerMask building;
     private LayerMask UI;
 
     private building_main building_main;
@@ -37,7 +39,8 @@ public class main_controller : MonoBehaviour
     {
         my_team_id = team_ids.Ayham_team;
         ground = LayerMask.GetMask("Ground");
-        clickable = LayerMask.GetMask("Clickable");
+        unit = LayerMask.GetMask("Unit");
+        building = LayerMask.GetMask("Building");
         UI = LayerMask.GetMask("UI");
         building_controller = GetComponent<building_controller>();
     }
@@ -127,9 +130,8 @@ public class main_controller : MonoBehaviour
     {
         if (selected_units.Count == 0) return;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | clickable))
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground | unit | building))
         {
-
             target_unit = null;
             target_building = null;
             if (hit.collider.CompareTag("Unit"))
@@ -140,18 +142,43 @@ public class main_controller : MonoBehaviour
             {
                 target_building = hit.collider.GetComponent<building_main>();
             }
+
             if (selected_units.Count == 1)
             {
                 selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
                 return;
             }
-            float radius = Mathf.Sqrt(selected_units.Count) * 1.2f;
+
+            move_group(hit.point, target_unit, target_building);
+        }
+    }
+
+    private void move_group(Vector3 target_pos, unit_main target_unit, building_main target_building)
+    {
+        // ! do not forget to launch unit_seleected event here after setuping up there abilites
+
+        NavMeshPath path = new NavMeshPath();
+        float shortest_distance = float.MaxValue;
+        unit_main closest_unit = null;
+        foreach (unit_main unit in selected_units)
+        {
+            if (unit == null || !unit.is_alive) continue;
+            if (Vector3.Distance(unit.transform.position, target_pos) < shortest_distance)
+            {
+                shortest_distance = Vector3.Distance(unit.transform.position, target_pos);
+                closest_unit = unit;
+            }
+        }
+        if (NavMesh.CalculatePath(closest_unit.transform.position, target_pos, NavMesh.AllAreas, path))
+        {
             foreach (unit_main unit in selected_units)
             {
-                unit.unit_right_click(hit.point, target_unit, target_building, radius);
+                Vector3 dest = target_pos - closest_unit.transform.position + unit.transform.position;
+                unit.unit_right_click(dest, target_unit, target_building, 0);
             }
         }
     }
+
     private void handle_left_click()
     {
         if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -162,7 +189,7 @@ public class main_controller : MonoBehaviour
         bool is_multi_selecting = Input.GetKey(KeyCode.LeftAlt);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, clickable | ground))
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, unit | ground))
         {
             if (!is_multi_selecting)
             {

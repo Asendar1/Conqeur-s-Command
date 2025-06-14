@@ -8,8 +8,8 @@ public class camera_movement : MonoBehaviour
     public float maxY = 80f;
 
     public float borderThickness = 10f; // Pixels from screen edge
-    public Vector2 mapLimitX = new Vector2(-50, 50);
-    public Vector2 mapLimitZ = new Vector2(-50, 50);
+    // public Vector2 mapLimitX = new Vector2(-50, 50);
+    // public Vector2 mapLimitZ = new Vector2(-50, 50);
 
     void Update()
     {
@@ -39,9 +39,9 @@ public class camera_movement : MonoBehaviour
         pos.y -= scroll * scrollSpeed * Time.deltaTime;
 
         // Clamp zoom and movement
-        pos.y = Mathf.Clamp(pos.y, minY, maxY);
-        pos.x = Mathf.Clamp(pos.x, mapLimitX.x, mapLimitX.y);
-        pos.z = Mathf.Clamp(pos.z, mapLimitZ.x, mapLimitZ.y);
+        // pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        // pos.x = Mathf.Clamp(pos.x, mapLimitX.x, mapLimitX.y);
+        // pos.z = Mathf.Clamp(pos.z, mapLimitZ.x, mapLimitZ.y);
 
         transform.position = pos;
     }

@@ -14,7 +14,8 @@ GameObject:
   - component: {fileID: 2276717253586288353}
   - component: {fileID: 3555152209011994149}
   - component: {fileID: 1825802458390152591}
-  m_Layer: 6
+  - component: {fileID: 3143531472136074048}
+  m_Layer: 9
   m_Name: worker
   m_TagString: Unit
   m_Icon: {fileID: 0}
@@ -150,10 +151,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e095c195b0264ad459bf68b03447d46f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  move_speed: 5
-  rotation_speed: 5
-  stopping_distance: 0.5
-  avoidance_distance: 1
+  movement_type: 0
+  max_speed: 5
+  turn_speed: 180
+  obstacle_check_distance: 5
+  calculation_interval: 0.1
+  obstacle_layer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!195 &3143531472136074048
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8938944886596098285}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 1
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1001 &3768114322921180287
 PrefabInstance:
   m_ObjectHideFlags: 0

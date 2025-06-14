@@ -1611,7 +1611,7 @@ GameObject:
   - component: {fileID: 4419250547424944006}
   - component: {fileID: 3545525016508964150}
   - component: {fileID: 6336070019429218845}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: funds_building
   m_TagString: Building
   m_Icon: {fileID: 0}
@@ -2459,6 +2459,10 @@ PrefabInstance:
     - target: {fileID: 8002021369405729949, guid: d3991f8b6784430478fc594eb2068a5c, type: 3}
       propertyPath: m_Name
       value: health_bar
+      objectReference: {fileID: 0}
+    - target: {fileID: 8002021369405729949, guid: d3991f8b6784430478fc594eb2068a5c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

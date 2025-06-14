@@ -227,7 +227,7 @@ GameObject:
   - component: {fileID: 2789352232975442569}
   - component: {fileID: 4924601649020114142}
   - component: {fileID: 1926144039868914580}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: supply_base
   m_TagString: Building
   m_Icon: {fileID: 0}
