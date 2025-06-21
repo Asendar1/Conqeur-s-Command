@@ -25,13 +25,13 @@ public class camera_movement : MonoBehaviour
         // if (Input.GetKey("d") || Input.mousePosition.x >= Screen.width - borderThickness)
         //     pos += Vector3.right * moveSpeed * Time.deltaTime;
 
-        if (Input.GetKey("w"))
+        if (Input.GetKey(KeyCode.UpArrow))
             pos += Vector3.forward * moveSpeed * Time.deltaTime;
-        if (Input.GetKey("s"))
+        if (Input.GetKey(KeyCode.DownArrow))
             pos += Vector3.back * moveSpeed * Time.deltaTime;
-        if (Input.GetKey("a"))
+        if (Input.GetKey(KeyCode.LeftArrow))
             pos += Vector3.left * moveSpeed * Time.deltaTime;
-        if (Input.GetKey("d"))
+        if (Input.GetKey(KeyCode.RightArrow))
             pos += Vector3.right * moveSpeed * Time.deltaTime;
 
         // Zoom with scroll wheel
@@ -39,7 +39,7 @@ public class camera_movement : MonoBehaviour
         pos.y -= scroll * scrollSpeed * Time.deltaTime;
 
         // Clamp zoom and movement
-        // pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        pos.y = Mathf.Clamp(pos.y, minY, maxY);
         // pos.x = Mathf.Clamp(pos.x, mapLimitX.x, mapLimitX.y);
         // pos.z = Mathf.Clamp(pos.z, mapLimitZ.x, mapLimitZ.y);
 

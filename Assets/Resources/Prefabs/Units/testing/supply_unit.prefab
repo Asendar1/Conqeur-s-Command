@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1867704228766251162}
   - component: {fileID: 4906601452952685881}
   - component: {fileID: -8540338286410955140}
-  - component: {fileID: 7119443600676000636}
+  - component: {fileID: 7416110872601369038}
   m_Layer: 9
   m_Name: supply_unit
   m_TagString: Unit
@@ -157,36 +157,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e095c195b0264ad459bf68b03447d46f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movement_type: 0
-  max_speed: 5
-  turn_speed: 180
-  obstacle_check_distance: 5
-  calculation_interval: 0.1
-  obstacle_layer:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!195 &7119443600676000636
-NavMeshAgent:
+--- !u!114 &7416110872601369038
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8798521411538206031}
   m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 1
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01210499f47a7eb42a16f697449c023f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementUnitTypes: 1
+  movementSpeed: 5
+  turnSpeed: 180
+  hasDestination: 0
 --- !u!1001 &7815239115707328941
 PrefabInstance:
   m_ObjectHideFlags: 0

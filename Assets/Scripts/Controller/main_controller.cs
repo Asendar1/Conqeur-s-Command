@@ -98,6 +98,13 @@ public class main_controller : MonoBehaviour
         {
             building_controller.spawn_building(building_ids.SupplyBase);
         }
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            foreach (unit_main unit in selected_units)
+            {
+                unit.stop_unit();
+            }
+        }
         // to test money addition
         if (Input.GetKeyDown(KeyCode.L))
         {
@@ -149,33 +156,15 @@ public class main_controller : MonoBehaviour
                 return;
             }
 
-            move_group(hit.point, target_unit, target_building);
+            generate_waypoints(hit.point, target_unit, target_building);
         }
     }
 
-    private void move_group(Vector3 target_pos, unit_main target_unit, building_main target_building)
+    private void generate_waypoints(Vector3 targetPos, unit_main target_unit, building_main target_building)
     {
-        // ! do not forget to launch unit_seleected event here after setuping up there abilites
-
-        NavMeshPath path = new NavMeshPath();
-        float shortest_distance = float.MaxValue;
-        unit_main closest_unit = null;
         foreach (unit_main unit in selected_units)
         {
-            if (unit == null || !unit.is_alive) continue;
-            if (Vector3.Distance(unit.transform.position, target_pos) < shortest_distance)
-            {
-                shortest_distance = Vector3.Distance(unit.transform.position, target_pos);
-                closest_unit = unit;
-            }
-        }
-        if (NavMesh.CalculatePath(closest_unit.transform.position, target_pos, NavMesh.AllAreas, path))
-        {
-            foreach (unit_main unit in selected_units)
-            {
-                Vector3 dest = target_pos - closest_unit.transform.position + unit.transform.position;
-                unit.unit_right_click(dest, target_unit, target_building, 0);
-            }
+            unit.set_move_order(targetPos);
         }
     }
 

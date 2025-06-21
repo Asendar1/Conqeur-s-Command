@@ -115,7 +115,7 @@ public class unit_main : MonoBehaviour
     }
     public void stop_unit()
     {
-        unit_movement.stop_unit();
+        unit_movement.StopMovement();
     }
     public virtual void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
     {
