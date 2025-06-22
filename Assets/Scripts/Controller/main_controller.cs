@@ -77,7 +77,7 @@ public class main_controller : MonoBehaviour
                 spawn_position.y = 0;
                 for (int i = 0; i < 100; i++)
                 {
-                    Vector3 random_spawn = new Vector3(spawn_position.x + Random.Range(-5f, 5f), spawn_position.y, spawn_position.z + Random.Range(-5f, 5f));
+                    Vector3 random_spawn = new Vector3(spawn_position.x + Random.Range(-5f, 5f), spawn_position.y + 1, spawn_position.z + Random.Range(-5f, 5f));
                     GameObject newUnitObject = Instantiate(unitPrefab, random_spawn, Quaternion.identity);
                 }
             }

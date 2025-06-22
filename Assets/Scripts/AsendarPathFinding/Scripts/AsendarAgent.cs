@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace AsendarPathFinding
@@ -6,10 +7,14 @@ namespace AsendarPathFinding
 	{
 		[Header("Movement Type")]
 		public MovementUnitTypes movementUnitTypes = MovementUnitTypes.None;
+
 		[Header("Movement Speed (Auto-configured)")]
 		public float movementSpeed = 5f;
 		public float turnSpeed = 180f;
 
+		[Header("Avoidance Settings")]
+		public float avoidanceDistance = 3f;
+		public LayerMask avoidanceLayerMask = -1; // assign at runtime
 		// agent state
 		public bool hasDestination = false;
 		private Vector3 _dest;
@@ -17,6 +22,7 @@ namespace AsendarPathFinding
 
 		void Start()
 		{
+			avoidanceLayerMask = LayerMask.GetMask("Obstacle", "Building");
 			// Set movement speed based on unit type
 			switch (movementUnitTypes)
 			{
@@ -50,6 +56,8 @@ namespace AsendarPathFinding
 				return;
 			}
 
+			direction = basicAvoidance(direction);
+
 			if (movementUnitTypes == MovementUnitTypes.FootUnit)
 			{
 				transform.rotation = Quaternion.LookRotation(direction);
@@ -67,6 +75,39 @@ namespace AsendarPathFinding
 					transform.position += direction * movementSpeed * Time.deltaTime;
 				}
 			}
+		}
+
+		private Vector3 basicAvoidance(Vector3 direction)
+		{
+			if (!Physics.Raycast(transform.position, direction, avoidanceDistance, avoidanceLayerMask))
+			{
+				return direction; // no obstacles in the way
+			}
+
+			Vector3 lookRight = Quaternion.Euler(0, 45, 0) * direction;
+			if (!Physics.Raycast(transform.position, lookRight, avoidanceDistance, avoidanceLayerMask))
+			{
+				return lookRight; // can move right
+			}
+
+			Vector3 sharpRight = Quaternion.Euler(0, 90, 0) * direction;
+			if (!Physics.Raycast(transform.position, sharpRight, avoidanceDistance, avoidanceLayerMask))
+			{
+				return sharpRight;
+			}
+
+			Vector3 lookLeft = Quaternion.Euler(0, -45, 0) * direction;
+			if (!Physics.Raycast(transform.position, lookLeft, avoidanceDistance, avoidanceLayerMask))
+			{
+				return lookLeft;
+			}
+
+			Vector3 sharpLeft = Quaternion.Euler(0, -90, 0) * direction;
+			if (!Physics.Raycast(transform.position, sharpLeft, avoidanceDistance, avoidanceLayerMask))
+			{
+				return sharpLeft;
+			}
+			return Vector3.zero; // no valid direction found
 		}
 
 		public void SetDestination(Vector3 dest)
