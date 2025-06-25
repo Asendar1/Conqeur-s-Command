@@ -37,6 +37,7 @@ namespace AsendarPathFinding
 
 			currentFlowField = FlowFieldGenerator.generateFlowField(target, worldOrigin, gridWidth, gridHeight, cellSize);
 			flowFieldValid = true;
+			lastTarget = target;
 		}
 
 		public void moveUnitsToTarget(flowFieldAgent[] units, Vector3 target)

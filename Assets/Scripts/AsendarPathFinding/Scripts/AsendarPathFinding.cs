@@ -69,6 +69,9 @@ namespace AsendarPathFinding
 
 	public static class FlowFieldGenerator
 	{
+		private static LayerMask obstacleLayerMask = LayerMask.GetMask("Obstacle", "Building"); // will this be set every request? "optimize"
+
+
 		public static flowField generateFlowField(Vector3 target, Vector3 worldPos, int width, int height, float cellSize)
 		{
 			flowField field = new flowField(width, height, cellSize, worldPos);
@@ -82,8 +85,6 @@ namespace AsendarPathFinding
 
 		private static void markObstacles(ref flowField field)
 		{
-			LayerMask obstacleLayerMask = LayerMask.GetMask("Obstacle", "Building"); // will this be set every request? "optimize"
-
 			for (int x = 0; x < field.width; x++)
 			{
 				for (int y = 0; y < field.height; y++)
@@ -173,7 +174,7 @@ namespace AsendarPathFinding
 							if (field.distance[nx, ny] < bestDistance)
 							{
 								bestDistance = field.distance[nx, ny];
-								bestDir = new Vector2(dx, dy);
+								bestDir = new Vector2(dx, dy).normalized;
 							}
 						}
 					}

@@ -59,15 +59,9 @@ namespace AsendarPathFinding
 
 		void Update()
 		{
-			// THROTTLE UPDATES FOR PERFORMANCE
 			if (Time.time - last_update_time < update_frequency) return;
 			last_update_time = Time.time;
 
-			// Add random offset so units don't all update same frame
-			if (Time.time < 1f) // Only in first second
-			{
-				update_frequency += UnityEngine.Random.Range(-0.005f, 0.005f);
-			}
 			if (!hasTarget)
 			{
 				currentVelocity = Vector3.zero;
