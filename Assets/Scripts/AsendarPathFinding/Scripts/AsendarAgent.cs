@@ -58,37 +58,55 @@ namespace AsendarPathFinding
 		// i'll use update for now but later it will optimized
 		void Update()
 		{
-			if (!hasDestination)
-			{
-				return;
-			}
+			if (!hasDestination) return;
 
 			Vector3 direction = (_dest - transform.position).normalized;
 			float distance = Vector3.Distance(transform.position, _dest);
 
 			// Is there a unit at _dest? if yes then get a new _dest near it
-			if (Time.time - _lastCollionCheck > _checkInterval)
+			// ! this if check is trash for now, might delete it later
+			// if (Time.time - _lastCollionCheck > _checkInterval)
+			// {
+			// 	_lastCollionCheck = Time.time;
+			// 	Collider[] hitColliders = Physics.OverlapSphere(_dest, 5f, unitAvoidanceLayerMask);
+			// 	if (hitColliders.Length > 0)
+			// 	{
+			// 		if (hitColliders[0].gameObject != this.gameObject)
+			// 		{
+			// 			_dest = findNearestFreePosition(_originalDest, -2f, 2f);
+			// 		}
+			// 		// ! Very important note. This is a temporary solution due to this being rendered every frame,
+			// 		// ! cuz the check is done every frame the unit for certain will know when to get another _dest.
+			// 		// ! idk if later in optimization if the check will be as fast or not.
+			// 	}
+			// }
+
+			// ? for now check if the nearby unit has reached its destination
+			Collider[] nearbyUnits = Physics.OverlapSphere(_dest, 2f, unitAvoidanceLayerMask);
+			if (nearbyUnits.Length > 0)
 			{
-				_lastCollionCheck = Time.time;
-				Collider[] hitColliders = Physics.OverlapSphere(_dest, 1f, unitAvoidanceLayerMask);
-				if (hitColliders.Length > 0)
+				foreach (Collider unit in nearbyUnits)
 				{
-					if (hitColliders[0].gameObject != this.gameObject)
+					if (unit.gameObject == this.gameObject) continue;
+					AsendarAgent agent = unit.GetComponent<AsendarAgent>();
+					if (agent != null && agent.IsMoving())
 					{
-						_dest = findNearestFreePosition(_originalDest, -2f, 2f);
+						if (Vector3.Distance(unit.transform.position, agent._dest) < 2f)
+						{
+							hasDestination = false;
+							return;
+						}
 					}
-					// ! Very important note. This is a temporary solution due to this being rendered every frame,
-					// ! cuz the check is done every frame the unit for certain will know when to get another _dest.
-					// ! idk if later in optimization if the check will be as fast or not.
 				}
 			}
-			if (distance < 0.2f)
-			{
-				hasDestination = false;
-				return;
-			}
 
-			direction = basicAvoidance(direction);
+			if (distance < 1f)
+				{
+					hasDestination = false;
+					return;
+				}
+
+			direction = betterAvoidance(direction);
 
 			if (movementUnitTypes == MovementUnitTypes.FootUnit)
 			{
@@ -108,6 +126,31 @@ namespace AsendarPathFinding
 					transform.position += direction * movementSpeed * Time.deltaTime;
 				}
 			}
+		}
+
+		private Vector3 betterAvoidance(Vector3 direction)
+		{
+			Vector3 avoidanceForce = Vector3.zero;
+
+			Collider[] nearbyUnits = Physics.OverlapSphere(transform.position, unitAvoidanceDistance, unitAvoidanceLayerMask);
+			foreach (Collider unit in nearbyUnits)
+			{
+				if (unit.gameObject == this.gameObject) continue;
+
+				Vector3 repulsion = transform.position - unit.transform.position;
+				float distance = repulsion.magnitude;
+
+				if (distance < unitAvoidanceDistance && distance > 0)
+				{
+					float strength = Mathf.Clamp01((unitAvoidanceDistance - distance) / unitAvoidanceDistance);
+					avoidanceForce += repulsion.normalized * strength;
+				}
+			}
+
+			Vector3 finalDirection = direction + avoidanceForce;
+			finalDirection = basicAvoidance(finalDirection);
+
+			return finalDirection.normalized;
 		}
 
 		private Vector3 findNearestFreePosition(Vector3 dest, float v1, float v2)
@@ -131,6 +174,7 @@ namespace AsendarPathFinding
 
 		private Vector3 basicAvoidance(Vector3 direction)
 		{
+
 			if (!Physics.Raycast(transform.position, direction, avoidanceDistance, avoidanceLayerMask))
 			{
 				return direction; // no obstacles in the way
