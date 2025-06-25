@@ -1,12 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
-using System.Data.SqlTypes;
-using UnityEngine.UI;
-using Unity.Collections;
 using UnityEngine.InputSystem;
-using Unity.VisualScripting;
-using UnityEngine.AI;
+using AsendarPathFinding;
+
 
 public class main_controller : MonoBehaviour
 {
@@ -74,7 +71,6 @@ public class main_controller : MonoBehaviour
             {
                 Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit_spawn, Mathf.Infinity, ground);
                 Vector3 spawn_position = hit_spawn.point;
-                spawn_position.y = 0;
                 for (int i = 0; i < 100; i++)
                 {
                     Vector3 random_spawn = new Vector3(spawn_position.x + Random.Range(-5f, 5f), spawn_position.y + 1, spawn_position.z + Random.Range(-5f, 5f));
@@ -98,7 +94,7 @@ public class main_controller : MonoBehaviour
         {
             building_controller.spawn_building(building_ids.SupplyBase);
         }
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.Q))
         {
             foreach (unit_main unit in selected_units)
             {
@@ -150,23 +146,26 @@ public class main_controller : MonoBehaviour
                 target_building = hit.collider.GetComponent<building_main>();
             }
 
-            if (selected_units.Count == 1)
-            {
-                selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
-                return;
-            }
-
             generate_waypoints(hit.point, target_unit, target_building);
         }
     }
 
     private void generate_waypoints(Vector3 targetPos, unit_main target_unit, building_main target_building)
     {
-        foreach (unit_main unit in selected_units)
+        // Get all FlowFieldAgents from selected units
+        flowFieldAgent[] agents = new flowFieldAgent[selected_units.Count];
+        for (int i = 0; i < selected_units.Count; i++)
         {
-            unit.set_move_order(targetPos);
+            agents[i] = selected_units[i].GetComponent<flowFieldAgent>();
+        }
+
+        // Move all units using flow field
+        if (flowFieldManager.instance != null)
+        {
+            flowFieldManager.instance.moveUnitsToTarget(agents, targetPos);
         }
     }
+
 
     private void handle_left_click()
     {

@@ -174,10 +174,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01210499f47a7eb42a16f697449c023f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementUnitTypes: 1
-  movementSpeed: 5
+  movementUnitType: 1
+  maxSpeed: 5
+  acceleration: 8
   turnSpeed: 180
-  hasDestination: 0
+  avoidanceRadius: 1.5
+  avoidanceStrength: 2
+  neightborRadius: 3
+  alignmentStrength: 1
+  cohesionStrength: 1
+  unitLayerMask:
+    serializedVersion: 2
+    m_Bits: 1527
 --- !u!1001 &8839531789589410683
 PrefabInstance:
   m_ObjectHideFlags: 0

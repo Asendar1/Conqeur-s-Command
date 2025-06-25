@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,10 @@ public class worker_unit_panel : MonoBehaviour
     public static Action<building_ids> on_building_button_click;
 
 
+    // void OnEnable()
+    // {
+    //     game_events.
+    // }
     private void Start()
     {
         if (hq_ui_button != null)

@@ -3,30 +3,32 @@ using AsendarPathFinding;
 
 public class unit_movement : MonoBehaviour
 {
-    private AsendarAgent agent;
+    private flowFieldAgent agent;
 
     void Start()
     {
-        agent = GetComponent<AsendarAgent>();
+        agent = GetComponent<flowFieldAgent>();
         if (agent == null)
         {
-            Debug.LogError("AsendarAgent component not found on the unit.");
+            Debug.LogError("flowFieldAgent component not found on the unit.");
         }
     }
 
     public void MoveTo(Vector3 destination)
     {
-        if (agent != null)
-        {
-            agent.SetDestination(destination);
-        }
+        // if (agent != null)
+        // {
+        //     agent.setTarget(destination);
+        // }
+        return;
     }
 
     public void StopMovement()
     {
-        if (agent != null)
-        {
-            agent.Stop();
-        }
+        // if (agent != null)
+        // {
+        //     agent.Stop();
+        // }
+        return;
     }
 }
