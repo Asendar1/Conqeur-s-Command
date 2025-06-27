@@ -149,14 +149,15 @@ public class main_controller : MonoBehaviour
             {
                 target_building = hit.collider.GetComponent<building_main>();
             }
-
+            Vector3 targetPos = hit.point;
+            targetPos.y = 0;
             if (selected_units.Count == 1)
             {
-                selected_units[0].unit_right_click(hit.point, target_unit, target_building, 0);
+                selected_units[0].unit_right_click(targetPos, target_unit, target_building, 0);
                 return;
             }
 
-            generate_waypoints(hit.point, target_unit, target_building);
+            generate_waypoints(targetPos, target_unit, target_building);
         }
     }
 

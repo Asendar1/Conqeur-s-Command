@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using NUnit.Framework;
 using Unity.Mathematics;
 using Unity.VisualScripting;
@@ -33,8 +34,22 @@ namespace AsendarPathFinding
 		private float _lastCollionCheck = 0f;
 		private float _checkInterval = 0.005f;
 
+		// stuck detection
+		private float _stuckThreshold = 0.1f;
+		private float _stuckTimer = 0f;
+		private Vector3 _lastPosition;
+
+		// Coroutine Fields
+		private Coroutine _movementCoroutine;
+		private float _movementUpdateInterval = 0.1f;
+		private WaitForSeconds _waitForSeconds;
+
 		void Start()
 		{
+			// init _waitForSeconds to avoid GC allocations
+			_waitForSeconds = new WaitForSeconds(_movementUpdateInterval);
+			_movementCoroutine = null;
+
 			avoidanceLayerMask = LayerMask.GetMask("Obstacle", "Building");
 			unitAvoidanceLayerMask = LayerMask.GetMask("Unit");
 			unitAndObstacleLayerMask = LayerMask.GetMask("Unit", "Obstacle", "Building");
@@ -56,32 +71,139 @@ namespace AsendarPathFinding
 			}
 		}
 		// i'll use update for now but later it will optimized
-		void Update()
+		// ! in state of moving the system to a coroutine. Will delete after testing
+		// void Update()
+		// {
+		// 	if (!hasDestination) return;
+		// 	_stuckTimer += Time.deltaTime;
+		// 	if (_stuckTimer > _stuckThreshold && Vector3.Distance(_lastPosition, transform.position) < 0.01f)
+		// 		amIstuck();
+
+		// 	Vector3 direction = (_dest - transform.position).normalized;
+		// 	float distance = Vector3.Distance(transform.position, _dest);
+
+		// 	// ? for now check if the nearby unit has reached its destination
+		// 	Collider[] nearbyUnits = Physics.OverlapSphere(_dest, 2f, unitAvoidanceLayerMask);
+		// 	if (nearbyUnits.Length > 0)
+		// 	{
+		// 		foreach (Collider unit in nearbyUnits)
+		// 		{
+		// 			if (unit.gameObject == this.gameObject) continue;
+		// 			AsendarAgent agent = unit.GetComponent<AsendarAgent>();
+		// 			if (agent != null && agent.IsMoving() && agent._dest == _dest)
+		// 			{
+		// 				if (Vector3.Distance(unit.transform.position, agent._dest) < 2f)
+		// 				{
+		// 					hasDestination = false;
+		// 					return;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+
+		// 	if (distance < 1f)
+		// 	{
+		// 		hasDestination = false;
+		// 		return;
+		// 	}
+
+		// 	direction = betterAvoidance(direction);
+
+		// 	if (movementUnitTypes == MovementUnitTypes.FootUnit)
+		// 	{
+		// 		transform.rotation = Quaternion.LookRotation(direction);
+		// 		transform.position += direction * movementSpeed * Time.deltaTime;
+		// 		transform.position = new Vector3(transform.position.x, 0f, transform.position.z); // Keep the unit on the ground
+		// 	}
+		// 	else
+		// 	{
+		// 		// For vehicles, we need to handle rotation and movement separately
+		// 		Quaternion targetRotation = Quaternion.LookRotation(direction);
+		// 		transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
+
+		// 		float alignment = Vector3.Dot(transform.forward, direction);
+		// 		if (alignment > .99f)
+		// 		{
+		// 			transform.position += direction * movementSpeed * Time.deltaTime;
+		// 		}
+		// 	}
+		// }
+
+		private IEnumerator movementCoroutine()
 		{
-			if (!hasDestination) return;
+			while (hasDestination)
+			{
+				updateStuckState();
+				Vector3 direction = (_dest - transform.position).normalized;
+				float distance = Vector3.Distance(transform.position, _dest);
+				// for now since i still don't have a free waypoint system, i will use the info from other units
+				checkIfOtherReachedDest();
+				if (distance < 1f)
+				{
+					hasDestination = false;
+					yield break; // Stop the coroutine when destination is reached
+				}
+				direction = betterAvoidance(direction);
+				if (direction == Vector3.zero)
+				{
+					// I plan into making a smarter unitMovement system later
+					// so for now there is no system to handle such cases. Just stop the unit
+					Stop();
+				}
+				applyMovementByType(direction);
+				yield return null;
+			}
+		}
 
-			Vector3 direction = (_dest - transform.position).normalized;
-			float distance = Vector3.Distance(transform.position, _dest);
+		#region Stuck Detection (In Beta - Need testing)
+		private void updateStuckState()
+		{
+			if (_stuckTimer > _stuckThreshold && Vector3.Distance(_lastPosition, transform.position) < 0.01f)
+			{
+				amIstuck();
+			}
+			else
+			{
+				_stuckTimer = 0f;
+				_lastPosition = transform.position;
+			}
+		}
 
-			// Is there a unit at _dest? if yes then get a new _dest near it
-			// ! this if check is trash for now, might delete it later
-			// if (Time.time - _lastCollionCheck > _checkInterval)
-			// {
-			// 	_lastCollionCheck = Time.time;
-			// 	Collider[] hitColliders = Physics.OverlapSphere(_dest, 5f, unitAvoidanceLayerMask);
-			// 	if (hitColliders.Length > 0)
-			// 	{
-			// 		if (hitColliders[0].gameObject != this.gameObject)
-			// 		{
-			// 			_dest = findNearestFreePosition(_originalDest, -2f, 2f);
-			// 		}
-			// 		// ! Very important note. This is a temporary solution due to this being rendered every frame,
-			// 		// ! cuz the check is done every frame the unit for certain will know when to get another _dest.
-			// 		// ! idk if later in optimization if the check will be as fast or not.
-			// 	}
-			// }
+		private void amIstuck()
+		{
+			Vector3 escapeDirection = Vector3.zero;
+			int blockedUnits = 0;
 
-			// ? for now check if the nearby unit has reached its destination
+			Collider[] colliders = Physics.OverlapSphere(transform.position, unitAvoidanceDistance, unitAvoidanceLayerMask);
+			foreach (Collider collider in colliders)
+			{
+				if (collider.gameObject == this.gameObject) continue;
+
+				// Push away from ALL nearby units, not toward their destinations
+				Vector3 pushAway = transform.position - collider.transform.position;
+				escapeDirection += pushAway.normalized;
+				blockedUnits++;
+			}
+
+			if (blockedUnits > 0)
+			{
+				escapeDirection = escapeDirection.normalized;
+				Vector3 escapePosition = transform.position + escapeDirection * 3f;
+
+				// Make sure escape position is valid
+				if (!Physics.CheckSphere(escapePosition, 0.8f, unitAndObstacleLayerMask))
+				{
+					SetDestination(escapePosition);
+				}
+			}
+
+			_stuckTimer = 0f;
+			_lastPosition = transform.position;
+		}
+		#endregion
+
+		private void checkIfOtherReachedDest()
+		{
 			Collider[] nearbyUnits = Physics.OverlapSphere(_dest, 2f, unitAvoidanceLayerMask);
 			if (nearbyUnits.Length > 0)
 			{
@@ -89,7 +211,7 @@ namespace AsendarPathFinding
 				{
 					if (unit.gameObject == this.gameObject) continue;
 					AsendarAgent agent = unit.GetComponent<AsendarAgent>();
-					if (agent != null && agent.IsMoving())
+					if (agent != null && agent.IsMoving() && agent._dest == _dest)
 					{
 						if (Vector3.Distance(unit.transform.position, agent._dest) < 2f)
 						{
@@ -99,35 +221,9 @@ namespace AsendarPathFinding
 					}
 				}
 			}
-
-			if (distance < 1f)
-				{
-					hasDestination = false;
-					return;
-				}
-
-			direction = betterAvoidance(direction);
-
-			if (movementUnitTypes == MovementUnitTypes.FootUnit)
-			{
-				transform.rotation = Quaternion.LookRotation(direction);
-				transform.position += direction * movementSpeed * Time.deltaTime;
-				transform.position = new Vector3(transform.position.x, 0f, transform.position.z); // Keep the unit on the ground
-			}
-			else
-			{
-				// For vehicles, we need to handle rotation and movement separately
-				Quaternion targetRotation = Quaternion.LookRotation(direction);
-				transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
-
-				float alignment = Vector3.Dot(transform.forward, direction);
-				if (alignment > .99f)
-				{
-					transform.position += direction * movementSpeed * Time.deltaTime;
-				}
-			}
 		}
 
+		#region Avoidance Logic (In Beta - Units tend to suck in walls wide enough)
 		private Vector3 betterAvoidance(Vector3 direction)
 		{
 			Vector3 avoidanceForce = Vector3.zero;
@@ -153,57 +249,50 @@ namespace AsendarPathFinding
 			return finalDirection.normalized;
 		}
 
-		private Vector3 findNearestFreePosition(Vector3 dest, float v1, float v2)
-		{
-			float random = UnityEngine.Random.Range(0, 360);
-			for (float radius = v1; radius <= v2; radius += 0.5f)
-			{
-				for (int angle = 0; angle < 360; angle += 30)
-				{
-					Vector3 offset = Quaternion.Euler(0, angle, 0) * Vector3.forward * radius;
-					Vector3 newPosition = dest + offset;
-
-					if (!Physics.CheckSphere(newPosition, unitAvoidanceDistance, unitAndObstacleLayerMask))
-					{
-						return newPosition; // Found a free position
-					}
-				}
-			}
-			return dest; // No free position found, return original destination
-		}
-
 		private Vector3 basicAvoidance(Vector3 direction)
 		{
-
 			if (!Physics.Raycast(transform.position, direction, avoidanceDistance, avoidanceLayerMask))
-			{
-				return direction; // no obstacles in the way
-			}
+				return direction; // Clear path
 
-			Vector3 lookRight = Quaternion.Euler(0, 45, 0) * direction;
-			if (!Physics.Raycast(transform.position, lookRight, avoidanceDistance, avoidanceLayerMask))
-			{
-				return lookRight; // can move right
-			}
+			// Try alternative directions
+			Vector3[] alternatives = {
+				Quaternion.Euler(0, 45, 0) * direction,    // Right 45°
+                Quaternion.Euler(0, -45, 0) * direction,   // Left 45°
+                Quaternion.Euler(0, 90, 0) * direction,    // Right 90°
+                Quaternion.Euler(0, -90, 0) * direction    // Left 90°
+            };
 
-			Vector3 sharpRight = Quaternion.Euler(0, 90, 0) * direction;
-			if (!Physics.Raycast(transform.position, sharpRight, avoidanceDistance, avoidanceLayerMask))
+			foreach (Vector3 alt in alternatives)
 			{
-				return sharpRight;
+				if (!Physics.Raycast(transform.position, alt, avoidanceDistance, avoidanceLayerMask))
+				{
+					return alt;
+				}
 			}
+			return Vector3.zero; // No valid direction
+		}
+		#endregion
 
-			Vector3 lookLeft = Quaternion.Euler(0, -45, 0) * direction;
-			if (!Physics.Raycast(transform.position, lookLeft, avoidanceDistance, avoidanceLayerMask))
+		private void applyMovementByType(Vector3 direction)
+		{
+			if (movementUnitTypes == MovementUnitTypes.FootUnit)
 			{
-				return lookLeft;
+				transform.rotation = Quaternion.LookRotation(direction);
+				transform.position += direction * movementSpeed * Time.deltaTime;
+				transform.position = new Vector3(transform.position.x, 0f, transform.position.z); // Keep the unit on the ground
 			}
+			else
+			{
+				// For vehicles, we need to handle rotation and movement separately
+				Quaternion targetRotation = Quaternion.LookRotation(direction);
+				transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
 
-			Vector3 sharpLeft = Quaternion.Euler(0, -90, 0) * direction;
-			if (!Physics.Raycast(transform.position, sharpLeft, avoidanceDistance, avoidanceLayerMask))
-			{
-				return sharpLeft;
+				float alignment = Vector3.Dot(transform.forward, direction);
+				if (alignment > .99f)
+				{
+					transform.position += direction * movementSpeed * Time.deltaTime;
+				}
 			}
-			return Vector3.zero; // no valid direction found
 		}
 
 		public void SetDestination(Vector3 dest)
@@ -211,9 +300,20 @@ namespace AsendarPathFinding
 			_dest = dest;
 			_originalDest = dest;
 			hasDestination = true;
+
+			if (_movementCoroutine != null)
+			{
+				StopCoroutine(_movementCoroutine);
+			}
+			_movementCoroutine = StartCoroutine(movementCoroutine());
 		}
 		public void Stop()
 		{
+			if (_movementCoroutine != null)
+			{
+				StopCoroutine(_movementCoroutine);
+				_movementCoroutine = null;
+			}
 			hasDestination = false;
 		}
 		public bool IsMoving()
