@@ -21,7 +21,7 @@ namespace AsendarPathFinding
 		public LayerMask avoidanceLayerMask = -1;
 
 		[Header("Unit Avoidance Settings")]
-		public float unitAvoidanceDistance = 1.5f;
+		public float unitAvoidanceDistance = 2.5f;
 		public LayerMask unitAvoidanceLayerMask = -1;
 
 		private LayerMask unitAndObstacleLayerMask = -1;
@@ -43,6 +43,7 @@ namespace AsendarPathFinding
 		private Coroutine _movementCoroutine;
 		private float _movementUpdateInterval = 0.1f;
 		private WaitForSeconds _waitForSeconds;
+		private int _frameSkip = 3;
 
 		void Start()
 		{
@@ -133,7 +134,9 @@ namespace AsendarPathFinding
 		{
 			while (hasDestination)
 			{
-				updateStuckState();
+				// I think this function doesn't work at all cuz the units for some reason figure there way out
+				// through the units
+				// updateStuckState();
 				Vector3 direction = (_dest - transform.position).normalized;
 				float distance = Vector3.Distance(transform.position, _dest);
 				// for now since i still don't have a free waypoint system, i will use the info from other units
@@ -150,8 +153,13 @@ namespace AsendarPathFinding
 					// so for now there is no system to handle such cases. Just stop the unit
 					Stop();
 				}
-				applyMovementByType(direction);
-				yield return null;
+				applyMovementByType(direction * _frameSkip);
+
+				// This tells Unity to skip two frames. Each "yield return null" skips a frame.
+				for (int i = 0; i < _frameSkip; i++)
+				{
+					yield return null;
+				}
 			}
 		}
 
