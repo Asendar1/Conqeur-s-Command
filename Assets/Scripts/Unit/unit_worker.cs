@@ -1,14 +1,7 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
 using Mono.Cecil;
-using System.Runtime.CompilerServices;
-using UnityEngine.AI;
-using Unity.Mathematics;
-using Unity.VisualScripting;
-using UnityEditor.UI;
-
 
 public enum faction_ids
 {
@@ -40,9 +33,10 @@ public class unit_worker : unit_main
 
     public Dictionary<building_ids, int> buildings_cost = new Dictionary<building_ids, int>
     {
-        {building_ids.HQ, 200},
+        {building_ids.HQ, 500},
         {building_ids.Barracks, 150},
-        {building_ids.SupplyBase, 125}
+        {building_ids.SupplyBase, 125},
+        {building_ids.WarFactory, 300}
     };
 
     protected override void init_unit()

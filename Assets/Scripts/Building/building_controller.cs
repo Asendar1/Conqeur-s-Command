@@ -10,7 +10,8 @@ public enum building_ids
     HQ,
     Barracks,
     SupplyBase,
-    MoneyYard
+    MoneyYard,
+    WarFactory
 }
 public class building_controller : MonoBehaviour
 {

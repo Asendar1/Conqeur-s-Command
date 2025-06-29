@@ -1,16 +1,21 @@
 using System;
 using System.Collections;
-using NUnit.Framework;
-using Unity.Mathematics;
-using Unity.VisualScripting;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace AsendarPathFinding
 {
 	public class AsendarAgent : MonoBehaviour
 	{
+		#region Agent settings
 		[Header("Movement Type")]
 		public MovementUnitTypes movementUnitTypes = MovementUnitTypes.None;
+
+		[Header("Hybrid Pathfinding")]
+		private NavMeshPath navMeshPath;
+		private List<Vector3> pathWaypoints = new List<Vector3>();
+		private int currentWaypointIndex = 0;
 
 		[Header("Movement Speed (Auto-configured)")]
 		public float movementSpeed = 5f;
@@ -44,9 +49,13 @@ namespace AsendarPathFinding
 		private float _movementUpdateInterval = 0.1f;
 		private WaitForSeconds _waitForSeconds;
 		private int _frameSkip = 3;
+		#endregion
 
 		void Start()
 		{
+			// Initialize NavMeshPath
+			navMeshPath = new NavMeshPath();
+
 			// init _waitForSeconds to avoid GC allocations
 			_waitForSeconds = new WaitForSeconds(_movementUpdateInterval);
 			_movementCoroutine = null;
@@ -67,95 +76,41 @@ namespace AsendarPathFinding
 					break;
 				case MovementUnitTypes.HeavyVehicleUnit:
 					movementSpeed = 8f;
-					turnSpeed = 60f;
+					turnSpeed = 300f;
 					break;
 			}
 		}
-		// i'll use update for now but later it will optimized
-		// ! in state of moving the system to a coroutine. Will delete after testing
-		// void Update()
-		// {
-		// 	if (!hasDestination) return;
-		// 	_stuckTimer += Time.deltaTime;
-		// 	if (_stuckTimer > _stuckThreshold && Vector3.Distance(_lastPosition, transform.position) < 0.01f)
-		// 		amIstuck();
-
-		// 	Vector3 direction = (_dest - transform.position).normalized;
-		// 	float distance = Vector3.Distance(transform.position, _dest);
-
-		// 	// ? for now check if the nearby unit has reached its destination
-		// 	Collider[] nearbyUnits = Physics.OverlapSphere(_dest, 2f, unitAvoidanceLayerMask);
-		// 	if (nearbyUnits.Length > 0)
-		// 	{
-		// 		foreach (Collider unit in nearbyUnits)
-		// 		{
-		// 			if (unit.gameObject == this.gameObject) continue;
-		// 			AsendarAgent agent = unit.GetComponent<AsendarAgent>();
-		// 			if (agent != null && agent.IsMoving() && agent._dest == _dest)
-		// 			{
-		// 				if (Vector3.Distance(unit.transform.position, agent._dest) < 2f)
-		// 				{
-		// 					hasDestination = false;
-		// 					return;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-
-		// 	if (distance < 1f)
-		// 	{
-		// 		hasDestination = false;
-		// 		return;
-		// 	}
-
-		// 	direction = betterAvoidance(direction);
-
-		// 	if (movementUnitTypes == MovementUnitTypes.FootUnit)
-		// 	{
-		// 		transform.rotation = Quaternion.LookRotation(direction);
-		// 		transform.position += direction * movementSpeed * Time.deltaTime;
-		// 		transform.position = new Vector3(transform.position.x, 0f, transform.position.z); // Keep the unit on the ground
-		// 	}
-		// 	else
-		// 	{
-		// 		// For vehicles, we need to handle rotation and movement separately
-		// 		Quaternion targetRotation = Quaternion.LookRotation(direction);
-		// 		transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
-
-		// 		float alignment = Vector3.Dot(transform.forward, direction);
-		// 		if (alignment > .99f)
-		// 		{
-		// 			transform.position += direction * movementSpeed * Time.deltaTime;
-		// 		}
-		// 	}
-		// }
 
 		private IEnumerator movementCoroutine()
 		{
 			while (hasDestination)
 			{
-				// I think this function doesn't work at all cuz the units for some reason figure there way out
-				// through the units
+				// i don't think this works like it should do
 				// updateStuckState();
+				CheckWaypointProgress();
+
 				Vector3 direction = (_dest - transform.position).normalized;
 				float distance = Vector3.Distance(transform.position, _dest);
-				// for now since i still don't have a free waypoint system, i will use the info from other units
+
 				checkIfOtherReachedDest();
+
 				if (distance < 1f)
 				{
-					hasDestination = false;
-					yield break; // Stop the coroutine when destination is reached
+					// Reached destination
+					Stop();
+					yield break;
 				}
+
 				direction = betterAvoidance(direction);
+
 				if (direction == Vector3.zero)
 				{
-					// I plan into making a smarter unitMovement system later
-					// so for now there is no system to handle such cases. Just stop the unit
 					Stop();
+					yield break;
 				}
-				applyMovementByType(direction * _frameSkip);
 
-				// This tells Unity to skip two frames. Each "yield return null" skips a frame.
+				applyMovementByType(direction, _frameSkip);
+
 				for (int i = 0; i < _frameSkip; i++)
 				{
 					yield return null;
@@ -281,22 +236,21 @@ namespace AsendarPathFinding
 		}
 		#endregion
 
-		private void applyMovementByType(Vector3 direction)
+		private void applyMovementByType(Vector3 direction, int _frameskip)
 		{
 			if (movementUnitTypes == MovementUnitTypes.FootUnit)
 			{
 				transform.rotation = Quaternion.LookRotation(direction);
-				transform.position += direction * movementSpeed * Time.deltaTime;
+				transform.position += direction * movementSpeed * Time.deltaTime * _frameskip;
 				transform.position = new Vector3(transform.position.x, 0f, transform.position.z); // Keep the unit on the ground
 			}
-			else
+			if (movementUnitTypes == MovementUnitTypes.HeavyVehicleUnit) // vehicles that need to turn inself to move
 			{
-				// For vehicles, we need to handle rotation and movement separately
 				Quaternion targetRotation = Quaternion.LookRotation(direction);
 				transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
 
 				float alignment = Vector3.Dot(transform.forward, direction);
-				if (alignment > .99f)
+				if (alignment > .999f)
 				{
 					transform.position += direction * movementSpeed * Time.deltaTime;
 				}
@@ -305,16 +259,66 @@ namespace AsendarPathFinding
 
 		public void SetDestination(Vector3 dest)
 		{
-			_dest = dest;
-			_originalDest = dest;
-			hasDestination = true;
-
-			if (_movementCoroutine != null)
+			if (NavMesh.CalculatePath(transform.position, dest, NavMesh.AllAreas, navMeshPath))
 			{
-				StopCoroutine(_movementCoroutine);
+				// Extract waypoints
+				pathWaypoints.Clear();
+				pathWaypoints.AddRange(navMeshPath.corners);
+
+				if (pathWaypoints.Count > 1)
+				{
+					currentWaypointIndex = 1; // Skip current position
+					_dest = pathWaypoints[currentWaypointIndex];
+					_originalDest = dest;
+					hasDestination = true;
+
+					Debug.Log($"Unity found path with {pathWaypoints.Count} waypoints");
+
+					// Use YOUR movement system
+					if (_movementCoroutine != null)
+						StopCoroutine(_movementCoroutine);
+					_movementCoroutine = StartCoroutine(movementCoroutine());
+				}
 			}
-			_movementCoroutine = StartCoroutine(movementCoroutine());
+			else // fallback to old way for now
+			{
+				_dest = dest;
+				_originalDest = dest;
+				hasDestination = true;
+
+				if (_movementCoroutine != null)
+				{
+					StopCoroutine(_movementCoroutine);
+				}
+				_movementCoroutine = StartCoroutine(movementCoroutine());
+			}
 		}
+
+		private void CheckWaypointProgress()
+		{
+			if (pathWaypoints.Count == 0) return;
+
+			float distanceToWaypoint = Vector3.Distance(transform.position, _dest);
+
+			if (distanceToWaypoint < 1.5f)
+			{
+				currentWaypointIndex++;
+
+				if (currentWaypointIndex < pathWaypoints.Count)
+				{
+					_dest = pathWaypoints[currentWaypointIndex];
+					Debug.Log($"Next waypoint: {currentWaypointIndex}/{pathWaypoints.Count}");
+				}
+				else
+				{
+					// Reached destination
+					hasDestination = false;
+					pathWaypoints.Clear();
+					currentWaypointIndex = 0;
+				}
+			}
+		}
+
 		public void Stop()
 		{
 			if (_movementCoroutine != null)
@@ -331,20 +335,60 @@ namespace AsendarPathFinding
 
 		void OnDrawGizmos()
 		{
-			if (hasDestination)
+			// Draw current path waypoints
+			if (pathWaypoints.Count > 1)
 			{
-				Gizmos.color = Color.green;
+				// Draw path lines
+				Gizmos.color = Color.cyan;
+				for (int i = 0; i < pathWaypoints.Count - 1; i++)
+				{
+					Gizmos.DrawLine(pathWaypoints[i], pathWaypoints[i + 1]);
+				}
+
+				// Draw waypoint spheres
+				for (int i = 0; i < pathWaypoints.Count; i++)
+				{
+					if (i == 0)
+					{
+						// Start point - green
+						Gizmos.color = Color.green;
+						Gizmos.DrawWireSphere(pathWaypoints[i], 0.3f);
+					}
+					else if (i == pathWaypoints.Count - 1)
+					{
+						// End point - red
+						Gizmos.color = Color.red;
+						Gizmos.DrawWireSphere(pathWaypoints[i], 0.4f);
+					}
+					else if (i == currentWaypointIndex)
+					{
+						// Current target waypoint - yellow (larger)
+						Gizmos.color = Color.yellow;
+						Gizmos.DrawWireSphere(pathWaypoints[i], 0.6f);
+					}
+					else
+					{
+						// Other waypoints - white (small)
+						Gizmos.color = Color.white;
+						Gizmos.DrawWireSphere(pathWaypoints[i], 0.2f);
+					}
+				}
+
+				// Draw current destination with special highlight
+				if (currentWaypointIndex < pathWaypoints.Count)
+				{
+					Gizmos.color = Color.yellow;
+					Gizmos.DrawLine(transform.position, pathWaypoints[currentWaypointIndex]);
+				}
+			}
+
+			// Draw simple line to destination if no path waypoints
+			else if (hasDestination)
+			{
+				Gizmos.color = Color.magenta;
 				Gizmos.DrawLine(transform.position, _dest);
 				Gizmos.DrawWireSphere(_dest, 0.5f);
 			}
-
-			// Draw avoidance sphere
-			Gizmos.color = Color.red;
-			Gizmos.DrawWireSphere(transform.position, avoidanceDistance);
-
-			// Draw unit avoidance sphere
-			Gizmos.color = Color.blue;
-			Gizmos.DrawWireSphere(transform.position, unitAvoidanceDistance);
 		}
 	}
 }

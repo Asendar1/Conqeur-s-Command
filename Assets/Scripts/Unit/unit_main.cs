@@ -13,7 +13,8 @@ public enum unit_ids
 {
     supply_unit,
     infantry_unit,
-    worker_unit
+    worker_unit,
+    vehicle_unit,
 };
 
 public class unit_main : MonoBehaviour
@@ -96,27 +97,33 @@ public class unit_main : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
     public void set_select(bool status)
     {
         is_selected = status;
         health_bar_controller.SetVisible(status);
     }
+
     public virtual void set_move_order(Vector3 dest)
     {
         unit_movement.MoveTo(dest);
     }
+
     public void set_attack_order(unit_main target_unit)
     {
         unit_attacks.attack_target(target_unit);
     }
+
     public void set_attack_order(building_main target_building)
     {
         unit_attacks.attack_target(target_building);
     }
+
     public void stop_unit()
     {
         unit_movement.StopMovement();
     }
+
     public virtual void unit_right_click(Vector3 pos, unit_main target_unit, building_main target_building, float radius)
     {
         if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -152,6 +159,7 @@ public class unit_main : MonoBehaviour
             set_move_order(pos);
         }
     }
+
     protected virtual void init_unit()
     {
         // This method is to be overridden by child classes for specific unit initialization
