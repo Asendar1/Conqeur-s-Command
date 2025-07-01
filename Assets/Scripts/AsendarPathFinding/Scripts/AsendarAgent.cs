@@ -192,7 +192,7 @@ namespace AsendarPathFinding
 		}
 
 		#region Avoidance Logic (In Beta - Units tend to suck in walls wide enough)
-		private Vector3 betterAvoidance(Vector3 direction)
+		protected virtual Vector3 betterAvoidance(Vector3 direction)
 		{
 			Vector3 avoidanceForce = Vector3.zero;
 
