@@ -33,6 +33,7 @@ namespace AsendarPathFinding
 		// agent state
 		public bool hasDestination = false;
 		private Vector3 _dest;
+		private Vector3 _finalDest;
 		private Vector3 _velocity;
 
 		private Vector3 _originalDest;
@@ -90,9 +91,9 @@ namespace AsendarPathFinding
 				CheckWaypointProgress();
 
 				Vector3 direction = (_dest - transform.position).normalized;
-				float distance = Vector3.Distance(transform.position, _dest);
+				float distance = Vector3.Distance(transform.position, _finalDest);
 
-				checkIfOtherReachedDest();
+				// checkIfOtherReachedDest(); // this function makes them stop earilis at checkpoints instead of _finalDest. Doesn't matter since its temporary
 
 				if (distance < 1f)
 				{
@@ -101,6 +102,10 @@ namespace AsendarPathFinding
 					yield break;
 				}
 
+				// the local avoidance needs more work
+				// TODO fix clipping through walls due to no spance is available for the unit
+				// TODO tanks should not give care about units. The footUnits need to move for the tank not the other way
+				// TODO make them avoid each other better by giving conditions if there is a space or not. no problem to make them ghost through
 				direction = betterAvoidance(direction);
 
 				if (direction == Vector3.zero)
@@ -174,7 +179,7 @@ namespace AsendarPathFinding
 				{
 					if (unit.gameObject == this.gameObject) continue;
 					AsendarAgent agent = unit.GetComponent<AsendarAgent>();
-					if (agent != null && agent.IsMoving() && agent._dest == _dest)
+					if (agent != null && agent.IsMoving() && agent._finalDest == _finalDest)
 					{
 						if (Vector3.Distance(unit.transform.position, agent._dest) < 2f)
 						{
@@ -207,7 +212,7 @@ namespace AsendarPathFinding
 			}
 
 			Vector3 finalDirection = direction + avoidanceForce;
-			finalDirection = basicAvoidance(finalDirection);
+			// finalDirection = basicAvoidance(finalDirection);
 
 			return finalDirection.normalized;
 		}
@@ -259,6 +264,7 @@ namespace AsendarPathFinding
 
 		public void SetDestination(Vector3 dest)
 		{
+			_finalDest = dest;
 			if (NavMesh.CalculatePath(transform.position, dest, NavMesh.AllAreas, navMeshPath))
 			{
 				// Extract waypoints

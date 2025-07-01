@@ -2425,18 +2425,18 @@ MonoBehaviour:
   m_LayerMask:
     serializedVersion: 2
     m_Bits: 1152
-  m_UseGeometry: 0
+  m_UseGeometry: 1
   m_DefaultArea: 0
   m_GenerateLinks: 0
   m_IgnoreNavMeshAgent: 1
   m_IgnoreNavMeshObstacle: 1
   m_OverrideTileSize: 0
   m_TileSize: 256
-  m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.16666667
+  m_OverrideVoxelSize: 1
+  m_VoxelSize: 0.0666667
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: 68768c2f601282a4b92855488537da80, type: 2}
-  m_BuildHeightMesh: 0
+  m_BuildHeightMesh: 1
 --- !u!1 &1050874151
 GameObject:
   m_ObjectHideFlags: 0
@@ -3413,15 +3413,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3146135204390873564, guid: 8790a2fd4988ad1408e5f75cb023f52e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 32.07619
+      value: 32.770287
       objectReference: {fileID: 0}
     - target: {fileID: 3146135204390873564, guid: 8790a2fd4988ad1408e5f75cb023f52e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.49999905
+      value: 0.5000005
       objectReference: {fileID: 0}
     - target: {fileID: 3146135204390873564, guid: 8790a2fd4988ad1408e5f75cb023f52e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 55.451935
+      value: 55.015633
       objectReference: {fileID: 0}
     - target: {fileID: 3146135204390873564, guid: 8790a2fd4988ad1408e5f75cb023f52e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4024,6 +4024,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1926144039868914580, guid: d3f0359c17c5f954a99f1c5e356a458e, type: 3}
+      propertyPath: m_Size.x
+      value: 12.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 1926144039868914580, guid: d3f0359c17c5f954a99f1c5e356a458e, type: 3}
+      propertyPath: m_Size.z
+      value: 12.87
+      objectReference: {fileID: 0}
     - target: {fileID: 2789352232975442569, guid: d3f0359c17c5f954a99f1c5e356a458e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 51.3
