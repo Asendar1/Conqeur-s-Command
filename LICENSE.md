@@ -7,7 +7,6 @@ This project, "Conquer's Command", and all its related assets, code, and content
 
 You are permitted to:
 
-- Download and play the game
 - Create mods or modifications for **personal or non-commercial use only**
 
 You may **not**:
@@ -18,4 +17,4 @@ You may **not**:
 
 Commercial use, redistribution, or rebranding of this project or its components is strictly prohibited without express written permission from the author.
 
-For permissions, contact: [your email here]
+For permissions, contact: [let the game finish first lol]
