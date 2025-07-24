@@ -10,14 +10,14 @@ Created by [Hamzah Asendar](https://github.com/Asendar1)
 Conquer's Command is a feature-rich RTS prototype developed entirely in Unity using C#.  
 Inspired by classics like *Command & Conquer*, this project focuses on core RTS mechanics, optimized systems, and scalable architecture—built with performance and clarity in mind.
 
-> ⚠️ **Note**: Development is currently on hold. This project was a solo effort, and is open for contributions, collaboration, or future funding.
+> ⚠️ **Note**: Development is currently on hold. This project was a solo effort, and busy with life.
 
 ---
 
 ## 🧠 Key Features
 
 - ✅ **Custom Unit Movement & Pathfinding**
-  - Grid-based A* pathfinding
+  - Hierarchical pathfinding with Unity's AI Pathfinding
   - Obstacle avoidance
   - Directional movement and rotation
 
@@ -67,27 +67,7 @@ Conquer's-Command/
 
 ---
 
-## 📷 Screenshots
+## 📷 Screenshots & GIFs
 
 *(Coming Soon – placeholder art used during prototyping phase)*
 
----
-
-## 🧑‍💻 Author
-
-**Hamzah Asendar**  
-- 💻 Software Engineering Student @ 42 Amman  
-- 💡 Background in C, Shell, Unity C#, and low-level game systems  
-- 🌐 [GitHub](https://github.com/Asendar1) • [LinkedIn (soon)](#) • [CV Available](#)
-
----
-
-## 🤝 Contributing
-
-While the game is currently paused, feel free to fork, contribute ideas, or reach out for collaboration or funding.
-
----
-
-## 📜 License
-
-This project is released under the **MIT License**.
